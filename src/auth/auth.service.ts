@@ -12,7 +12,7 @@ export class AuthService {
     @InjectRepository(UsersRepository)
     private usersRepository: UsersRepository,
     private jwtService: JwtService,
-  ) {}
+  ) { }
   async login(authCredentialsDto: AuthCredentialsDto) {
     const { username, password } = authCredentialsDto;
 
@@ -26,7 +26,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const payload: JwtPayload = { username: user.username, role: user.role };
+    const payload: JwtPayload = { username: user.username, roles: user.roles };
 
     const accessToken = await this.generateAccessToken(payload);
 

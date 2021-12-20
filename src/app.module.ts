@@ -11,6 +11,8 @@ import { VodsModule } from './vods/vods.module';
 import { TwitchService } from './twitch/twitch.service';
 import { TwitchModule } from './twitch/twitch.module';
 import { HttpModule } from '@nestjs/axios';
+import { FilesService } from './files/files.service';
+import { FilesModule } from './files/files.module';
 
 @Module({
   imports: [
@@ -55,8 +57,10 @@ import { HttpModule } from '@nestjs/axios';
     HttpModule,
 
     CacheModule.register(),
+
+    FilesModule,
   ],
   controllers: [AppController],
-  providers: [AppService, TwitchService],
+  providers: [AppService, TwitchService, FilesService],
 })
 export class AppModule {}

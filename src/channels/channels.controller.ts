@@ -1,14 +1,21 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
 import { ChannelsService } from './channels.service';
 import { CreateChannelDto } from './dto/create-channel.dto';
 import { UpdateChannelDto } from './dto/update-channel.dto';
+import { AuthGuard } from '@nestjs/passport';
+import { GetUser } from 'src/auth/get-user.decorator';
+import { User, UserRole } from 'src/users/entities/user.entity';
+import { Roles } from 'src/auth/role.decorator';
+import { RolesGuard } from 'src/auth/roles.guard';
 
-@Controller('channels')
+@Controller({ path: 'channels', version: '1' })
 export class ChannelsController {
-  constructor(private readonly channelsService: ChannelsService) {}
+  constructor(private readonly channelsService: ChannelsService) { }
 
   @Post()
-  create(@Body() createChannelDto: CreateChannelDto) {
+  @UseGuards(AuthGuard(), RolesGuard)
+  @Roles(UserRole.ARCHIVER, UserRole.ADMIN)
+  create(@Body() createChannelDto: CreateChannelDto, @GetUser() user: User) {
     return this.channelsService.create(createChannelDto);
   }
 
