@@ -13,6 +13,7 @@ import { TwitchModule } from './twitch/twitch.module';
 import { HttpModule } from '@nestjs/axios';
 import { FilesService } from './files/files.service';
 import { FilesModule } from './files/files.module';
+import { QueuesModule } from './queues/queues.module';
 
 @Module({
   imports: [
@@ -59,6 +60,8 @@ import { FilesModule } from './files/files.module';
     CacheModule.register(),
 
     FilesModule,
+
+    QueuesModule,
   ],
   controllers: [AppController],
   providers: [AppService, TwitchService, FilesService],

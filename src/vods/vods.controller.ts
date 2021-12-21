@@ -3,9 +3,9 @@ import { VodsService } from './vods.service';
 import { CreateVodDto } from './dto/create-vod.dto';
 import { UpdateVodDto } from './dto/update-vod.dto';
 
-@Controller('vods')
+@Controller({ path: 'vods', version: '1' })
 export class VodsController {
-  constructor(private readonly vodsService: VodsService) {}
+  constructor(private readonly vodsService: VodsService) { }
 
   @Post()
   create(@Body() createVodDto: CreateVodDto) {

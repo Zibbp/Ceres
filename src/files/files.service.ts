@@ -33,6 +33,20 @@ export class FilesService {
             throw new InternalServerErrorException(`Error downloading channel image`);
         }
     }
+    async downloadVodThumnail(url: string, path: string) {
+        try {
+            const imageReq = await this.httpService.get(url, {
+                responseType: 'arraybuffer',
+            });
+            const response = await firstValueFrom(imageReq)
+
+            await fs.writeFileSync(`/mnt/vods/${path}`, response.data);
+
+        } catch (error) {
+            this.logger.error('Error downloading vod thumbnail image', error)
+            throw new InternalServerErrorException(`Error downloading vod thumbnail image`);
+        }
+    }
     async writeFile(fileName: string, data: string) {
         try {
             await fs.writeFileSync(`/mnt/vods/${fileName}`, data);
