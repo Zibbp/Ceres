@@ -26,7 +26,7 @@ export class ChannelsController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.channelsService.findOne(+id);
+    return this.channelsService.findOne(id);
   }
 
   @Patch(':id')

@@ -1,5 +1,6 @@
-import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { Channel } from './entities/channel.entity';
 import { FilesService } from 'src/files/files.service';
 import { TwitchService } from 'src/twitch/twitch.service';
 import { ChannelsRepository } from './channels.repository';
@@ -16,6 +17,7 @@ export class ChannelsService {
     private twitchService: TwitchService,
     private filesService: FilesService
   ) { }
+
   async create(createChannelDto: CreateChannelDto) {
     const { username } = createChannelDto
     // Fetch channel information from Twitch API
@@ -56,12 +58,29 @@ export class ChannelsService {
     return channel;
   }
 
-  findAll() {
-    return `This action returns all channels`;
+  async findAll(): Promise<Array<Channel>> {
+    const channels = await this.channelsRepository.find({
+      order: {
+        createdAt: 'DESC'
+      }
+    });
+    return channels
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} channel`;
+  async findOne(id: string) {
+    let channel: Channel
+    try {
+      channel = await this.channelsRepository.findOne(id)
+      if (!channel) {
+        channel = await this.channelsRepository.getChannelByName(id)
+      }
+    } catch {
+      throw new NotFoundException(`Channel "${id}" not found`)
+    }
+    if (!channel) {
+      throw new NotFoundException(`Channel "${id}" not found`)
+    }
+    return channel
   }
 
   update(id: number, updateChannelDto: UpdateChannelDto) {
