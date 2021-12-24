@@ -11,4 +11,5 @@ export const configValidationSchema = Joi.object({
   JWT_EXPIRATION_TIME: Joi.number().required(),
   CLIENT_ID: Joi.string().required(),
   CLIENT_SECRET: Joi.string().required(),
+  API_URL: Joi.string().required(),
 });

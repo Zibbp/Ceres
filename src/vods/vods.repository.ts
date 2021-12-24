@@ -8,7 +8,7 @@ export class VodsRepository extends Repository<Vod> {
     async getVodById(id: string): Promise<Vod> {
         let vod: Vod;
         try {
-            vod = await this.findOne({ where: { id } });
+            vod = await this.findOne({ where: { id }, relations: ["channel"] });
         } catch (error) {
             throw new NotFoundException();
         }

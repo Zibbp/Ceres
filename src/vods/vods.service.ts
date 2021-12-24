@@ -8,6 +8,16 @@ import { FilesService } from 'src/files/files.service';
 import { ChannelsRepository } from 'src/channels/channels.repository';
 import { CreateChannelDto } from 'src/channels/dto/create-channel.dto';
 import { ChannelsService } from 'src/channels/channels.service';
+import { QueuesRepository } from 'src/queues/queues.repository';
+import { CreateQueueDto } from 'src/queues/dto/create-queue.dto';
+import { ExecService } from 'src/exec/exec.service';
+import { User } from 'src/users/entities/user.entity';
+import {
+  paginate,
+  Pagination,
+  IPaginationOptions,
+} from 'nestjs-typeorm-paginate';
+import { Vod } from './entities/vod.entity';
 
 @Injectable()
 export class VodsService {
@@ -17,13 +27,15 @@ export class VodsService {
     private vodsRepository: VodsRepository,
     @InjectRepository(ChannelsRepository)
     private channelsRepository: ChannelsRepository,
+    @InjectRepository(QueuesRepository)
+    private queuesRepository: QueuesRepository,
     private twitchService: TwitchService,
     private filesService: FilesService,
-    private channelsService: ChannelsService
+    private channelsService: ChannelsService,
+    private execService: ExecService
   ) { }
-  async create(createVodDto: CreateVodDto) {
+  async create(createVodDto: CreateVodDto, user: User) {
     const { id } = createVodDto;
-    console.log(`archiving vods with id: ${id}`);
 
     const vodInfo = await this.twitchService.getVodInfo(id)
 
@@ -32,7 +44,7 @@ export class VodsService {
     if (checkVod) {
       throw new HttpException('Vod already exists', HttpStatus.CONFLICT);
     }
-
+    this.logger.verbose(`Archiving vod ${id} requested by ${user.username}`);
     // Check if vod channel is in database, if not create.
     const checkChannel = await this.channelsRepository.getChannelByName(vodInfo.user_login)
     if (!checkChannel) {
@@ -59,14 +71,58 @@ export class VodsService {
     this.logger.verbose(`Downloading vod ${id} web thumbnail`)
     await this.filesService.downloadVodThumnail(webThumbnailUrl, `${safeChannelName}/${id}/${id}_web_thumbnail.jpg`)
 
+    // Create queue item
+    const createQueue: CreateQueueDto = {
+      vodId: id,
+      title: vodInfo.title,
+      liveArchive: false,
+      videoDone: false,
+      chatDownloadDone: false,
+      chatRenderDone: false,
+      completed: false
+    }
+    const queue = await this.queuesRepository.createQueueItem(createQueue, user)
+
+    await this.execService.archiveVideo(vodInfo, "source", safeChannelName, queue.id)
+    await this.execService.archiveChat(vodInfo, safeChannelName, queue.id)
+
+    const hms = vodInfo.duration.split('h').join(':').split('m').join(':').split('s')
+    const durationSeconds = this.hmsToSeconds(hms[0])
+
+    this.logger.verbose(`Creating vod ${id} entrty in database`)
+    // Create vod entry in database
+    const vod = await this.vodsRepository.create({
+      id: vodInfo.id,
+      channel: checkChannel,
+      title: vodInfo.title,
+      broadcastType: vodInfo.type,
+      duration: durationSeconds,
+      viewCount: vodInfo.view_count,
+      resolution: 'source',
+      downloading: true,
+      thumbnailPath: `/${safeChannelName}/${id}/${id}_thumbnail.jpg`,
+      webThumbnailPath: `/${safeChannelName}/${id}/${id}_web_thumbnail.jpg`,
+      videoPath: `/${safeChannelName}/${id}/${id}_video.mp4`,
+      chatPath: `/${safeChannelName}/${id}/${id}_chat.json`,
+      chatVideoPath: `/${safeChannelName}/${id}/${id}_chat.mp4`,
+      vodInfoPath: `/${safeChannelName}/${id}/${id}_info.json`,
+      createdAt: vodInfo.created_at
+    })
+    await this.vodsRepository.save(vod)
+
+    return { vod, queue }
+  };
 
 
-    return vodInfo;
 
-  }
-
-  findAll() {
-    return `This action returns all vods`;
+  async paginate(options: IPaginationOptions, channelId: string): Promise<Pagination<Vod>> {
+    const queryBuiler = this.vodsRepository.createQueryBuilder('vod')
+    if (channelId) {
+      queryBuiler.where("vod.channelId = :channelId", { channelId }).orderBy('vod.createdAt', 'DESC')
+    } else {
+      queryBuiler.select(['vod', 'channel.id', 'channel.login', 'channel.displayName']).leftJoin('vod.channel', 'channel').orderBy('vod.createdAt', 'DESC')
+    }
+    return paginate<Vod>(queryBuiler, options);
   }
 
   findOne(id: number) {
@@ -79,5 +135,16 @@ export class VodsService {
 
   remove(id: number) {
     return `This action removes a #${id} vod`;
+  }
+  hmsToSeconds(str: string) {
+    var p = str.split(':'),
+      s = 0, m = 1;
+
+    while (p.length > 0) {
+      s += m * parseInt(p.pop(), 10);
+      m *= 60;
+    }
+
+    return s;
   }
 }

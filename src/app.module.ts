@@ -14,6 +14,13 @@ import { HttpModule } from '@nestjs/axios';
 import { FilesService } from './files/files.service';
 import { FilesModule } from './files/files.module';
 import { QueuesModule } from './queues/queues.module';
+import { ExecService } from './exec/exec.service';
+import { ExecModule } from './exec/exec.module';
+import { QueuesService } from './queues/queues.service';
+import { QueuesRepository } from './queues/queues.repository';
+import { VodsRepository } from './vods/vods.repository';
+import { ChannelsRepository } from './channels/channels.repository';
+import { UsersRepository } from './users/users.repository';
 
 @Module({
   imports: [
@@ -45,6 +52,8 @@ import { QueuesModule } from './queues/queues.module';
       },
     }),
 
+    TypeOrmModule.forFeature([QueuesRepository, VodsRepository, ChannelsRepository, UsersRepository]),
+
     AuthModule,
 
     UsersModule,
@@ -62,8 +71,10 @@ import { QueuesModule } from './queues/queues.module';
     FilesModule,
 
     QueuesModule,
+
+    ExecModule,
   ],
   controllers: [AppController],
-  providers: [AppService, TwitchService, FilesService],
+  providers: [AppService, TwitchService, FilesService, ExecService, QueuesService],
 })
-export class AppModule {}
+export class AppModule { }

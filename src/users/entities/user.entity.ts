@@ -1,9 +1,11 @@
+import { Queue } from 'src/queues/entities/queue.entity';
 import {
   Entity,
   Column,
   PrimaryGeneratedColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  OneToMany,
 } from 'typeorm';
 
 export enum UserRole {
@@ -16,6 +18,9 @@ export enum UserRole {
 export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;
+
+  @OneToMany(() => Queue, (queue) => queue.user)
+  queues: Queue[];
 
   @Column({ unique: true })
   username: string;

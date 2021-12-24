@@ -1,20 +1,17 @@
 import { Channel } from 'src/channels/entities/channel.entity';
+import { Queue } from 'src/queues/entities/queue.entity';
 import {
   Column,
   CreateDateColumn,
   Entity,
   ManyToOne,
+  OneToMany,
   PrimaryColumn,
   UpdateDateColumn,
 } from 'typeorm';
 
 export enum BroadcastType {
   ARCHIVE = 'archive',
-  LIVE = 'live',
-}
-
-export enum StatusType {
-  RECORDED = 'recorded',
   LIVE = 'live',
 }
 
@@ -26,6 +23,9 @@ export class Vod {
   @ManyToOne(() => Channel, (channel) => channel.vods)
   channel: Channel;
 
+  // @OneToMany(() => Queue, (queue) => queue.vod)
+  // queue: Queue;
+
   @Column()
   title: string;
 
@@ -34,12 +34,6 @@ export class Vod {
     enum: BroadcastType,
   })
   broadcastType: BroadcastType;
-
-  @Column({
-    type: 'enum',
-    enum: StatusType,
-  })
-  status: StatusType;
 
   @Column()
   duration: number;
@@ -71,7 +65,7 @@ export class Vod {
   @Column({ nullable: true })
   vodInfoPath: string;
 
-  @CreateDateColumn()
+  @Column()
   createdAt: Date;
 
   @UpdateDateColumn()

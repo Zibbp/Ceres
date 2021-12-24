@@ -2,6 +2,7 @@ import { HttpService } from '@nestjs/axios';
 import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import * as fs from 'fs'
 import { firstValueFrom } from 'rxjs';
+import * as cpy from 'cpy'
 
 @Injectable()
 export class FilesService {
@@ -53,6 +54,15 @@ export class FilesService {
         } catch (error) {
             this.logger.error('Error writing file', error)
             throw new InternalServerErrorException(`Error writing file /mnt/vods/${fileName}`);
+        }
+    }
+    async moveFile(source: string, destination: string) {
+        try {
+            await cpy(source, destination)
+            await fs.unlinkSync(source)
+        } catch (error) {
+            this.logger.error('Error copying file', error)
+            throw new InternalServerErrorException(`Error copying file ${source} to ${destination}`);
         }
     }
 }

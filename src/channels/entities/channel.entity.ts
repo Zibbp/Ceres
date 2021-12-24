@@ -1,3 +1,4 @@
+import { Queue } from 'src/queues/entities/queue.entity';
 import { Vod } from 'src/vods/entities/vod.entity';
 import {
   Column,

@@ -5,6 +5,7 @@ import { AuthCredentialsDto } from './dto/auth-credentials.dto';
 import * as argon2 from 'argon2';
 import { JwtPayload } from './jwt-payload.interface';
 import { JwtService } from '@nestjs/jwt';
+import { User } from 'src/users/entities/user.entity';
 
 @Injectable()
 export class AuthService {
@@ -30,12 +31,16 @@ export class AuthService {
 
     const accessToken = await this.generateAccessToken(payload);
 
-    return { accessToken };
+    return { user: { id: user.id, username: user.username, roles: user.roles }, accessToken };
   }
 
   private async generateAccessToken(payload: JwtPayload): Promise<String> {
     const accessToken: string = await this.jwtService.sign(payload);
     return accessToken;
+  }
+
+  getMe(user: User) {
+    return { user: user }
   }
 
   findAll() {

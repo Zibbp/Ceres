@@ -1,20 +1,33 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, DefaultValuePipe, ParseIntPipe, Query } from '@nestjs/common';
 import { VodsService } from './vods.service';
 import { CreateVodDto } from './dto/create-vod.dto';
 import { UpdateVodDto } from './dto/update-vod.dto';
+import { AuthGuard } from '@nestjs/passport';
+import { RolesGuard } from 'src/auth/roles.guard';
+import { Roles } from 'src/auth/role.decorator';
+import { User, UserRole } from 'src/users/entities/user.entity';
+import { GetUser } from 'src/auth/get-user.decorator';
+import { ConfigService } from '@nestjs/config';
 
 @Controller({ path: 'vods', version: '1' })
 export class VodsController {
-  constructor(private readonly vodsService: VodsService) { }
+  constructor(private readonly vodsService: VodsService,
+    private configService: ConfigService) { }
 
   @Post()
-  create(@Body() createVodDto: CreateVodDto) {
-    return this.vodsService.create(createVodDto);
+  @UseGuards(AuthGuard(), RolesGuard)
+  @Roles(UserRole.ARCHIVER, UserRole.ADMIN)
+  create(@Body() createVodDto: CreateVodDto, @GetUser() user: User) {
+    return this.vodsService.create(createVodDto, user);
   }
 
   @Get()
-  findAll() {
-    return this.vodsService.findAll();
+  findAll(@Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number = 20,
+    @Query('channel') channelId: string) {
+    const apiUrl = this.configService.get('API_URL')
+    limit = limit > 100 ? 100 : limit;
+    return this.vodsService.paginate({ page, limit, route: `${apiUrl}/v1/vods` }, channelId);
   }
 
   @Get(':id')

@@ -1,20 +1,15 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
 import { QueuesService } from './queues.service';
 import { CreateQueueDto } from './dto/create-queue.dto';
 import { UpdateQueueDto } from './dto/update-queue.dto';
 
-@Controller('queues')
+@Controller({ path: 'queues', version: '1' })
 export class QueuesController {
-  constructor(private readonly queuesService: QueuesService) {}
-
-  @Post()
-  create(@Body() createQueueDto: CreateQueueDto) {
-    return this.queuesService.create(createQueueDto);
-  }
+  constructor(private readonly queuesService: QueuesService) { }
 
   @Get()
-  findAll() {
-    return this.queuesService.findAll();
+  findAll(@Query('completed') completed: boolean) {
+    return this.queuesService.findAll(completed);
   }
 
   @Get(':id')
