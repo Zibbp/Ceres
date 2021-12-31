@@ -13,7 +13,7 @@ export class AuthService {
     @InjectRepository(UsersRepository)
     private usersRepository: UsersRepository,
     private jwtService: JwtService,
-  ) { }
+  ) {}
   async login(authCredentialsDto: AuthCredentialsDto) {
     const { username, password } = authCredentialsDto;
 
@@ -31,16 +31,19 @@ export class AuthService {
 
     const accessToken = await this.generateAccessToken(payload);
 
-    return { user: { id: user.id, username: user.username, roles: user.roles }, accessToken };
+    return {
+      user: { id: user.id, username: user.username, roles: user.roles },
+      accessToken,
+    };
   }
 
-  private async generateAccessToken(payload: JwtPayload): Promise<String> {
+  private async generateAccessToken(payload: JwtPayload): Promise<string> {
     const accessToken: string = await this.jwtService.sign(payload);
     return accessToken;
   }
 
   getMe(user: User) {
-    return { user: user }
+    return { user: user };
   }
 
   findAll() {

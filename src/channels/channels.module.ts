@@ -12,8 +12,13 @@ import { ChannelsRepository } from './channels.repository';
 import { FilesService } from 'src/files/files.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([ChannelsRepository]), AuthModule, CacheModule.register(), HttpModule,],
+  imports: [
+    TypeOrmModule.forFeature([ChannelsRepository]),
+    AuthModule,
+    CacheModule.register(),
+    HttpModule,
+  ],
   controllers: [ChannelsController],
-  providers: [ChannelsService, TwitchService, ConfigService, FilesService]
+  providers: [ChannelsService, TwitchService, ConfigService, FilesService],
 })
-export class ChannelsModule { }
+export class ChannelsModule {}

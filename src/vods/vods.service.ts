@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { TwitchService } from 'src/twitch/twitch.service';
 import { CreateVodDto } from './dto/create-vod.dto';
@@ -32,44 +32,68 @@ export class VodsService {
     private twitchService: TwitchService,
     private filesService: FilesService,
     private channelsService: ChannelsService,
-    private execService: ExecService
+    private execService: ExecService,
   ) { }
   async create(createVodDto: CreateVodDto, user: User) {
     const { id } = createVodDto;
 
-    const vodInfo = await this.twitchService.getVodInfo(id)
+    const vodInfo = await this.twitchService.getVodInfo(id);
 
-    const checkVod = await this.vodsRepository.getVodById(id)
+    const checkVod = await this.vodsRepository.getVodById(id);
 
     if (checkVod) {
       throw new HttpException('Vod already exists', HttpStatus.CONFLICT);
     }
-    this.logger.verbose(`Archiving vod ${id} requested by ${user.username}`);
-    // Check if vod channel is in database, if not create.
-    const checkChannel = await this.channelsRepository.getChannelByName(vodInfo.user_login)
-    if (!checkChannel) {
-      this.logger.verbose(`Archived vod's channel is not in database. Creating channel ${vodInfo.user_login}`)
-      const createChannelDto: CreateChannelDto = { username: vodInfo.user_login }
-      const channel = await this.channelsService.create(createChannelDto)
+
+    if (!vodInfo.thumbnail_url) {
+      throw new HttpException('Vod thumbnail not found this likely means the channel is still live or the vod has not been processed yet.', HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
-    const safeChannelName = vodInfo.user_login.toLowerCase()
+    this.logger.verbose(`Archiving vod ${id} requested by ${user.username}`);
+    // Check if vod channel is in database, if not create.
+    const checkChannel = await this.channelsRepository.getChannelByName(
+      vodInfo.user_login,
+    );
+    if (!checkChannel) {
+      this.logger.verbose(
+        `Archived vod's channel is not in database. Creating channel ${vodInfo.user_login}`,
+      );
+      const createChannelDto: CreateChannelDto = {
+        username: vodInfo.user_login,
+      };
+      const channel = await this.channelsService.create(createChannelDto);
+    }
+
+    const safeChannelName = vodInfo.user_login.toLowerCase();
 
     // Create vod directory
-    this.logger.verbose(`Creating vod ${id} folder`)
-    await this.filesService.createFolder(`${safeChannelName}/${id}`)
+    this.logger.verbose(`Creating vod ${id} folder`);
+    await this.filesService.createFolder(`${safeChannelName}/${id}`);
 
     // Save vod info to json file
-    this.logger.verbose(`Saving vod ${id} info to json file`)
-    await this.filesService.writeFile(`${safeChannelName}/${id}/${id}_info.json`, JSON.stringify(vodInfo))
+    this.logger.verbose(`Saving vod ${id} info to json file`);
+    await this.filesService.writeFile(
+      `${safeChannelName}/${id}/${id}_info.json`,
+      JSON.stringify(vodInfo),
+    );
 
     // Save vod thumbnail to file
-    const thumbnailUrl = vodInfo.thumbnail_url.replace('%{width}', '1920').replace('%{height}', '1080')
-    const webThumbnailUrl = vodInfo.thumbnail_url.replace('%{width}', '640').replace('%{height}', '360')
-    this.logger.verbose(`Downloading vod ${id} thumbnail`)
-    await this.filesService.downloadVodThumnail(thumbnailUrl, `${safeChannelName}/${id}/${id}_thumbnail.jpg`)
-    this.logger.verbose(`Downloading vod ${id} web thumbnail`)
-    await this.filesService.downloadVodThumnail(webThumbnailUrl, `${safeChannelName}/${id}/${id}_web_thumbnail.jpg`)
+    const thumbnailUrl = vodInfo.thumbnail_url
+      .replace('%{width}', '1920')
+      .replace('%{height}', '1080');
+    const webThumbnailUrl = vodInfo.thumbnail_url
+      .replace('%{width}', '640')
+      .replace('%{height}', '360');
+    this.logger.verbose(`Downloading vod ${id} thumbnail`);
+    await this.filesService.downloadVodThumnail(
+      thumbnailUrl,
+      `${safeChannelName}/${id}/${id}_thumbnail.jpg`,
+    );
+    this.logger.verbose(`Downloading vod ${id} web thumbnail`);
+    await this.filesService.downloadVodThumnail(
+      webThumbnailUrl,
+      `${safeChannelName}/${id}/${id}_web_thumbnail.jpg`,
+    );
 
     // Create queue item
     const createQueue: CreateQueueDto = {
@@ -79,17 +103,30 @@ export class VodsService {
       videoDone: false,
       chatDownloadDone: false,
       chatRenderDone: false,
-      completed: false
-    }
-    const queue = await this.queuesRepository.createQueueItem(createQueue, user)
+      completed: false,
+    };
+    const queue = await this.queuesRepository.createQueueItem(
+      createQueue,
+      user,
+    );
 
-    await this.execService.archiveVideo(vodInfo, "source", safeChannelName, queue.id)
-    await this.execService.archiveChat(vodInfo, safeChannelName, queue.id)
+    await this.execService.archiveVideo(
+      vodInfo,
+      'source',
+      safeChannelName,
+      queue.id,
+    );
+    await this.execService.archiveChat(vodInfo, safeChannelName, queue.id);
 
-    const hms = vodInfo.duration.split('h').join(':').split('m').join(':').split('s')
-    const durationSeconds = this.hmsToSeconds(hms[0])
+    const hms = vodInfo.duration
+      .split('h')
+      .join(':')
+      .split('m')
+      .join(':')
+      .split('s');
+    const durationSeconds = this.hmsToSeconds(hms[0]);
 
-    this.logger.verbose(`Creating vod ${id} entrty in database`)
+    this.logger.verbose(`Creating vod ${id} entrty in database`);
     // Create vod entry in database
     const vod = await this.vodsRepository.create({
       id: vodInfo.id,
@@ -106,27 +143,42 @@ export class VodsService {
       chatPath: `/${safeChannelName}/${id}/${id}_chat.json`,
       chatVideoPath: `/${safeChannelName}/${id}/${id}_chat.mp4`,
       vodInfoPath: `/${safeChannelName}/${id}/${id}_info.json`,
-      createdAt: vodInfo.created_at
-    })
-    await this.vodsRepository.save(vod)
+      createdAt: vodInfo.created_at,
+    });
+    await this.vodsRepository.save(vod);
 
-    return { vod, queue }
-  };
+    return { vod, queue };
+  }
 
-
-
-  async paginate(options: IPaginationOptions, channelId: string): Promise<Pagination<Vod>> {
-    const queryBuiler = this.vodsRepository.createQueryBuilder('vod')
+  async paginate(
+    options: IPaginationOptions,
+    channelId: string,
+  ): Promise<Pagination<Vod>> {
+    const queryBuiler = this.vodsRepository.createQueryBuilder('vod');
     if (channelId) {
-      queryBuiler.where("vod.channelId = :channelId", { channelId }).orderBy('vod.createdAt', 'DESC')
+      queryBuiler
+        .where('vod.channelId = :channelId', { channelId })
+        .orderBy('vod.createdAt', 'DESC');
     } else {
-      queryBuiler.select(['vod', 'channel.id', 'channel.login', 'channel.displayName']).leftJoin('vod.channel', 'channel').orderBy('vod.createdAt', 'DESC')
+      queryBuiler
+        .select(['vod', 'channel.id', 'channel.login', 'channel.displayName'])
+        .leftJoin('vod.channel', 'channel')
+        .orderBy('vod.createdAt', 'DESC');
     }
     return paginate<Vod>(queryBuiler, options);
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} vod`;
+  async findOne(id: string) {
+    let vod: object
+    try {
+      vod = await this.vodsRepository.getVodById(id)
+    } catch (error) {
+      throw new NotFoundException(`Vod with id ${id} not found`)
+    }
+    if (!vod) {
+      throw new NotFoundException(`Vod with id ${id} not found`)
+    }
+    return vod;
   }
 
   update(id: number, updateVodDto: UpdateVodDto) {
@@ -137,8 +189,10 @@ export class VodsService {
     return `This action removes a #${id} vod`;
   }
   hmsToSeconds(str: string) {
+    // eslint-disable-next-line no-var
     var p = str.split(':'),
-      s = 0, m = 1;
+      s = 0,
+      m = 1;
 
     while (p.length > 0) {
       s += m * parseInt(p.pop(), 10);

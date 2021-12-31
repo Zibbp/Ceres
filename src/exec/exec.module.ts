@@ -10,7 +10,14 @@ import { VodsRepository } from 'src/vods/vods.repository';
 import { ExecService } from './exec.service';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([QueuesRepository, VodsRepository, UsersRepository]), HttpModule],
-    providers: [ExecService, QueuesService, FilesService, ConfigService]
+  imports: [
+    TypeOrmModule.forFeature([
+      QueuesRepository,
+      VodsRepository,
+      UsersRepository,
+    ]),
+    HttpModule,
+  ],
+  providers: [ExecService, QueuesService, FilesService, ConfigService],
 })
-export class ExecModule { }
+export class ExecModule {}

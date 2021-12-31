@@ -52,7 +52,12 @@ import { UsersRepository } from './users/users.repository';
       },
     }),
 
-    TypeOrmModule.forFeature([QueuesRepository, VodsRepository, ChannelsRepository, UsersRepository]),
+    TypeOrmModule.forFeature([
+      QueuesRepository,
+      VodsRepository,
+      ChannelsRepository,
+      UsersRepository,
+    ]),
 
     AuthModule,
 
@@ -75,6 +80,12 @@ import { UsersRepository } from './users/users.repository';
     ExecModule,
   ],
   controllers: [AppController],
-  providers: [AppService, TwitchService, FilesService, ExecService, QueuesService],
+  providers: [
+    AppService,
+    TwitchService,
+    FilesService,
+    ExecService,
+    QueuesService,
+  ],
 })
-export class AppModule { }
+export class AppModule {}

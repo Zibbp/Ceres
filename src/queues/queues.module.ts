@@ -6,10 +6,19 @@ import { VodsRepository } from 'src/vods/vods.repository';
 import { QueuesRepository } from './queues.repository';
 import { UsersRepository } from 'src/users/users.repository';
 import { HttpModule } from '@nestjs/axios';
+import { AuthModule } from 'src/auth/auth.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([VodsRepository, QueuesRepository, UsersRepository]), HttpModule],
+  imports: [
+    TypeOrmModule.forFeature([
+      VodsRepository,
+      QueuesRepository,
+      UsersRepository,
+    ]),
+    HttpModule,
+    AuthModule
+  ],
   controllers: [QueuesController],
-  providers: [QueuesService]
+  providers: [QueuesService],
 })
 export class QueuesModule { }

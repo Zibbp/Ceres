@@ -1,4 +1,16 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, DefaultValuePipe, ParseIntPipe, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+  DefaultValuePipe,
+  ParseIntPipe,
+  Query,
+} from '@nestjs/common';
 import { VodsService } from './vods.service';
 import { CreateVodDto } from './dto/create-vod.dto';
 import { UpdateVodDto } from './dto/update-vod.dto';
@@ -11,8 +23,10 @@ import { ConfigService } from '@nestjs/config';
 
 @Controller({ path: 'vods', version: '1' })
 export class VodsController {
-  constructor(private readonly vodsService: VodsService,
-    private configService: ConfigService) { }
+  constructor(
+    private readonly vodsService: VodsService,
+    private configService: ConfigService,
+  ) { }
 
   @Post()
   @UseGuards(AuthGuard(), RolesGuard)
@@ -22,17 +36,22 @@ export class VodsController {
   }
 
   @Get()
-  findAll(@Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
-    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number = 20,
-    @Query('channel') channelId: string) {
-    const apiUrl = this.configService.get('API_URL')
+  findAll(
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page = 1,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit = 20,
+    @Query('channel') channelId: string,
+  ) {
+    const apiUrl = this.configService.get('API_URL');
     limit = limit > 100 ? 100 : limit;
-    return this.vodsService.paginate({ page, limit, route: `${apiUrl}/v1/vods` }, channelId);
+    return this.vodsService.paginate(
+      { page, limit, route: `${apiUrl}/v1/vods` },
+      channelId,
+    );
   }
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.vodsService.findOne(+id);
+    return this.vodsService.findOne(id);
   }
 
   @Patch(':id')

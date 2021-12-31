@@ -3,6 +3,7 @@ import {
   InternalServerErrorException,
   Logger,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -16,7 +17,7 @@ export class UsersService {
   constructor(
     @InjectRepository(UsersRepository)
     private usersRepository: UsersRepository,
-  ) {}
+  ) { }
   async create(createUserDto: CreateUserDto) {
     const { username, password } = createUserDto;
     let hash: string;
@@ -42,8 +43,19 @@ export class UsersService {
     return 'test';
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
+  async update(id: string, updateUserDto: UpdateUserDto, user: User) {
+    if (id !== user.id) {
+      throw new UnauthorizedException('You are not authorized to perform this action');
+    }
+    try {
+      const findUser = await this.usersRepository.findOne(user.id);
+      findUser.webhook = updateUserDto.webhook;
+      await this.usersRepository.save(findUser);
+      return { message: 'User updated successfully' };
+    } catch (error) {
+      this.logger.error(error);
+      throw new InternalServerErrorException('Error updaring user');
+    }
   }
 
   remove(id: number) {

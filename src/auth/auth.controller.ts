@@ -16,7 +16,7 @@ import { GetUser } from './get-user.decorator';
 
 @Controller({ path: 'auth', version: '1' })
 export class AuthController {
-  constructor(private readonly authService: AuthService) { }
+  constructor(private readonly authService: AuthService) {}
 
   @Post('/login')
   login(@Body() authCredentialsDto: AuthCredentialsDto) {

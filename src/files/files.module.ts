@@ -8,9 +8,14 @@ import { VodsRepository } from 'src/vods/vods.repository';
 import { FilesService } from './files.service';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([QueuesRepository, VodsRepository, UsersRepository]), HttpModule],
-    providers: [FilesService, QueuesService],
+  imports: [
+    TypeOrmModule.forFeature([
+      QueuesRepository,
+      VodsRepository,
+      UsersRepository,
+    ]),
+    HttpModule,
+  ],
+  providers: [FilesService, QueuesService],
 })
-export class FilesModule {
-
-}
+export class FilesModule {}

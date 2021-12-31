@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+} from '@nestjs/common';
 import { ChannelsService } from './channels.service';
 import { CreateChannelDto } from './dto/create-channel.dto';
 import { UpdateChannelDto } from './dto/update-channel.dto';
@@ -10,7 +19,7 @@ import { RolesGuard } from 'src/auth/roles.guard';
 
 @Controller({ path: 'channels', version: '1' })
 export class ChannelsController {
-  constructor(private readonly channelsService: ChannelsService) { }
+  constructor(private readonly channelsService: ChannelsService) {}
 
   @Post()
   @UseGuards(AuthGuard(), RolesGuard)
