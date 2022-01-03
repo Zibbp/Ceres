@@ -19,7 +19,6 @@ export class QueuesController {
   constructor(private readonly queuesService: QueuesService) { }
 
   @Get()
-  @UseGuards(AuthGuard())
   findAll(@Query('completed') completed: boolean) {
     return this.queuesService.findAll(completed);
   }

@@ -11,7 +11,7 @@ import * as cpy from 'cpy';
 @Injectable()
 export class FilesService {
   private logger = new Logger('FilesService');
-  constructor(private httpService: HttpService) {}
+  constructor(private httpService: HttpService) { }
   async createFolder(folderName: string) {
     try {
       if (await !fs.existsSync(`/mnt/vods/${folderName}`)) {
@@ -71,6 +71,16 @@ export class FilesService {
       throw new InternalServerErrorException(
         `Error copying file ${source} to ${destination}`,
       );
+    }
+  }
+  async deleteFolder(path: string) {
+    try {
+      if (fs.existsSync(path)) {
+        fs.rmSync(path, { recursive: true });
+      }
+    } catch (error) {
+      this.logger.error('Error deleting folder', error);
+      throw new InternalServerErrorException(`Error deleting folder ${path}`);
     }
   }
 }

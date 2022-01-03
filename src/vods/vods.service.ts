@@ -154,18 +154,28 @@ export class VodsService {
     options: IPaginationOptions,
     channelId: string,
   ): Promise<Pagination<Vod>> {
-    const queryBuiler = this.vodsRepository.createQueryBuilder('vod');
-    if (channelId) {
-      queryBuiler
+    const queryBuilder = this.vodsRepository.createQueryBuilder('vod');
+    if (queryBuilder) {
+      queryBuilder
         .where('vod.channelId = :channelId', { channelId })
         .orderBy('vod.createdAt', 'DESC');
     } else {
-      queryBuiler
+      queryBuilder
         .select(['vod', 'channel.id', 'channel.login', 'channel.displayName'])
         .leftJoin('vod.channel', 'channel')
         .orderBy('vod.createdAt', 'DESC');
     }
-    return paginate<Vod>(queryBuiler, options);
+    return paginate<Vod>(queryBuilder, options);
+  }
+
+  async findAllNoPaginate() {
+    try {
+      const queryBuilder = await this.vodsRepository.createQueryBuilder('vod');
+      queryBuilder.select(['vod', 'channel.id', 'channel.login', 'channel.displayName']).orderBy('vod.createdAt', 'DESC').leftJoin('vod.channel', 'channel')
+      return await queryBuilder.getMany();
+    } catch (error) {
+      throw new InternalServerErrorException('Error finding all vods');
+    }
   }
 
   async findOne(id: string) {
@@ -181,12 +191,46 @@ export class VodsService {
     return vod;
   }
 
-  update(id: number, updateVodDto: UpdateVodDto) {
-    return `This action updates a #${id} vod`;
+  async update(id: string, updateVodDto: UpdateVodDto) {
+    let vod = await this.vodsRepository.getVodById(id)
+    if (!vod) {
+      throw new NotFoundException(`Vod with id ${id} not found`)
+    }
+    vod.title = updateVodDto.title
+    vod.broadcastType = updateVodDto.broadcastType
+    vod.duration = updateVodDto.duration
+    vod.viewCount = updateVodDto.viewCount
+    vod.resolution = updateVodDto.resolution
+    vod.downloading = updateVodDto.downloading
+    vod.thumbnailPath = updateVodDto.thumbnailPath
+    vod.webThumbnailPath = updateVodDto.webThumbnailPath
+    vod.videoPath = updateVodDto.videoPath
+    vod.chatPath = updateVodDto.chatPath
+    vod.chatVideoPath = updateVodDto.chatVideoPath
+    vod.vodInfoPath = updateVodDto.vodInfoPath
+    vod.createdAt = updateVodDto.createdAt
+
+    try {
+      await this.vodsRepository.save(vod)
+    } catch (error) {
+      throw new InternalServerErrorException('Error updating vod')
+    }
+
+    return vod
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} vod`;
+  async remove(id: string) {
+    const vod = await this.findOne(id)
+    const channelName = vod['channel']['login'].toLowerCase()
+    const vodPath = `/mnt/vods/${channelName}/${id}`
+    await this.filesService.deleteFolder(vodPath)
+    try {
+      await this.vodsRepository.delete(vod['id'])
+    } catch (error) {
+      this.logger.error('Error deleting vod', error)
+      throw new InternalServerErrorException('Error deleting vod')
+    }
+    return;
   }
   hmsToSeconds(str: string) {
     // eslint-disable-next-line no-var

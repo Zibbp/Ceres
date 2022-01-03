@@ -49,18 +49,28 @@ export class VodsController {
     );
   }
 
+  @Get('/all')
+  @UseGuards(AuthGuard())
+  findAllNoPaginate() {
+    return this.vodsService.findAllNoPaginate();
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.vodsService.findOne(id);
   }
 
   @Patch(':id')
+  @UseGuards(AuthGuard(), RolesGuard)
+  @Roles(UserRole.ADMIN)
   update(@Param('id') id: string, @Body() updateVodDto: UpdateVodDto) {
-    return this.vodsService.update(+id, updateVodDto);
+    return this.vodsService.update(id, updateVodDto);
   }
 
   @Delete(':id')
+  @UseGuards(AuthGuard(), RolesGuard)
+  @Roles(UserRole.ADMIN)
   remove(@Param('id') id: string) {
-    return this.vodsService.remove(+id);
+    return this.vodsService.remove(id);
   }
 }
