@@ -15,6 +15,23 @@ FROM node:16-alpine3.12
 
 ENV NODE_ENV production
 
+# Install dependencies (ffmpeg, twitchdownloader, Inter font)
+RUN apk update \
+    && apk add bash icu-libs krb5-libs libgcc libintl libssl1.1 libstdc++ zlib ffmpeg
+
+RUN mkdir /root/.fonts
+
+ADD ./.github/Inter.otf /root/.fonts/
+
+ARG TWITCHDOWNLOADER_VERSION=1.40.4
+
+WORKDIR /usr/bin
+
+RUN wget https://github.com/lay295/TwitchDownloader/releases/download/$TWITCHDOWNLOADER_VERSION/TwitchDownloaderCLI-LinuxAlpine-x64.zip \
+    && unzip TwitchDownloaderCLI-LinuxAlpine-x64.zip \
+    && chmod +x TwitchDownloaderCLI \
+    && rm TwitchDownloaderCLI-LinuxAlpine-x64.zip
+
 USER node
 WORKDIR /usr/src/app
 

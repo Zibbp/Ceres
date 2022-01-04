@@ -1,0 +1,22 @@
+version: '3.9'
+services:
+  ceres:
+    container_name: ceres
+    image: zibbp/ceres
+    ports:
+      - '4033:3000'
+    volumes:
+      - '/mnt/vods:/mnt/vods'
+      - './logs:/logs'
+    environment:
+      - PORT=3000
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_USERNAME=ceres
+      - DB_PASSWORD=ceres
+      - DB_DATABASE=ceres
+      - JWT_SECRET=randomcharacters
+      - JWT_EXPIRATION_TIME=86400
+      - CLIENT_ID=123
+      - CLIENT_SECRET=123
+      - API_URL=https://api.ceres.com
