@@ -35,12 +35,24 @@ export class UsersService {
     return user;
   }
 
-  findAll() {
-    return `This action returns all users`;
+  async findAll() {
+    try {
+      const users = this.usersRepository.createQueryBuilder('user').select(['user.id', 'user.username', 'user.roles', 'user.webhook', 'user.createdAt']).orderBy('user.createdAt', 'DESC')
+      return await users.getMany();
+    } catch (error) {
+      throw new InternalServerErrorException('Error fetching users');
+    }
   }
 
   async findOne(username: string) {
-    return 'test';
+    let user;
+    try {
+      user = await this.usersRepository.findOneOrFail({ username: username });
+      delete user.password
+    } catch (error) {
+      throw new NotFoundException('User not found');
+    }
+    return user
   }
 
   async update(id: string, updateUserDto: UpdateUserDto, user: User) {
@@ -58,7 +70,30 @@ export class UsersService {
     }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} user`;
+  async adminUpdate(id: string, updateUserDto: UpdateUserDto) {
+    try {
+      const findUser = await this.usersRepository.findOne(id);
+      findUser.webhook = updateUserDto.webhook;
+      findUser.roles = updateUserDto.roles;
+      await this.usersRepository.save(findUser);
+      return { message: 'User updated successfully' };
+    } catch (error) {
+      this.logger.error(error);
+      throw new InternalServerErrorException('Error updaring user');
+    }
+  }
+
+  async remove(id: string) {
+    const findUser = await this.usersRepository.findOne(id);
+    if (!findUser) {
+      throw new NotFoundException('User not found');
+    }
+    try {
+      await this.usersRepository.delete(findUser.id)
+    } catch (error) {
+      this.logger.error('Error deleting user', error);
+      throw new InternalServerErrorException('Error deleting user');
+    }
+    return;
   }
 }

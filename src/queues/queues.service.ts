@@ -96,16 +96,41 @@ export class QueuesService {
     await this.queuesRepository.save(queueItem);
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} queue`;
+  async findOne(id: string) {
+    let queueItem
+    try {
+      queueItem = await this.queuesRepository.findOneOrFail(id)
+    } catch (error) {
+      throw new NotFoundException(`Queue with id ${id} not found`);
+    }
+    return queueItem;
   }
 
-  update(id: number, updateQueueDto: UpdateQueueDto) {
-    return `This action updates a #${id} queue`;
+  async update(id: string, updateQueueDto: UpdateQueueDto) {
+    let queue = await this.findOne(id)
+    queue.liveArchive = updateQueueDto.liveArchive
+    queue.videoDone = updateQueueDto.videoDone
+    queue.chatDownloadDone = updateQueueDto.chatDownloadDone
+    queue.chatRenderDone = updateQueueDto.chatRenderDone
+    queue.completed = updateQueueDto.completed
+
+    try {
+      await this.queuesRepository.save(queue)
+    } catch (error) {
+      throw new InternalServerErrorException('Error updating queue item.')
+    }
+    return queue;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} queue`;
+  async remove(id: string) {
+    const queue = await this.findOne(id)
+    try {
+      await this.queuesRepository.delete(queue.id)
+    } catch (error) {
+      this.logger.error(`Error deleting queue item ${id} ${error}`)
+      throw new InternalServerErrorException('Error deleting queue item.')
+    }
+    return;
   }
   // Not the most efficient way to do this, but it works for now.
   // TODO: refactor this to use a stream instead of loading it all in memory at once.

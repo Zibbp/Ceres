@@ -12,8 +12,10 @@ import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { GetUser } from 'src/auth/get-user.decorator';
-import { User } from './entities/user.entity';
+import { User, UserRole } from './entities/user.entity';
 import { AuthGuard } from '@nestjs/passport';
+import { RolesGuard } from 'src/auth/roles.guard';
+import { Roles } from 'src/auth/role.decorator';
 
 @Controller({ path: 'users', version: '1' })
 export class UsersController {
@@ -25,11 +27,15 @@ export class UsersController {
   }
 
   @Get()
+  @UseGuards(AuthGuard(), RolesGuard)
+  @Roles(UserRole.ADMIN)
   findAll() {
     return this.usersService.findAll();
   }
 
   @Get(':username')
+  @UseGuards(AuthGuard(), RolesGuard)
+  @Roles(UserRole.ADMIN)
   findOne(@Param('username') username: string) {
     return this.usersService.findOne(username);
   }
@@ -40,8 +46,17 @@ export class UsersController {
     return this.usersService.update(id, updateUserDto, user);
   }
 
+  @Patch('admin/:id')
+  @UseGuards(AuthGuard(), RolesGuard)
+  @Roles(UserRole.ADMIN)
+  adminUpdate(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto, @GetUser() user: User) {
+    return this.usersService.adminUpdate(id, updateUserDto);
+  }
+
   @Delete(':id')
+  @UseGuards(AuthGuard(), RolesGuard)
+  @Roles(UserRole.ADMIN)
   remove(@Param('id') id: string) {
-    return this.usersService.remove(+id);
+    return this.usersService.remove(id);
   }
 }

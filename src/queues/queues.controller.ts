@@ -13,6 +13,9 @@ import { QueuesService } from './queues.service';
 import { CreateQueueDto } from './dto/create-queue.dto';
 import { UpdateQueueDto } from './dto/update-queue.dto';
 import { AuthGuard } from '@nestjs/passport';
+import { RolesGuard } from 'src/auth/roles.guard';
+import { Roles } from 'src/auth/role.decorator';
+import { UserRole } from 'src/users/entities/user.entity';
 
 @Controller({ path: 'queues', version: '1' })
 export class QueuesController {
@@ -25,17 +28,21 @@ export class QueuesController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.queuesService.findOne(+id);
+    return this.queuesService.findOne(id);
   }
 
   @Patch(':id')
+  @UseGuards(AuthGuard(), RolesGuard)
+  @Roles(UserRole.ADMIN)
   update(@Param('id') id: string, @Body() updateQueueDto: UpdateQueueDto) {
-    return this.queuesService.update(+id, updateQueueDto);
+    return this.queuesService.update(id, updateQueueDto);
   }
 
   @Delete(':id')
+  @UseGuards(AuthGuard(), RolesGuard)
+  @Roles(UserRole.ADMIN)
   remove(@Param('id') id: string) {
-    return this.queuesService.remove(+id);
+    return this.queuesService.remove(id);
   }
 
   @Get('/logs/:name')
