@@ -10,6 +10,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
 import { Cache } from 'cache-manager';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 @Injectable()
 export class TwitchService implements OnModuleInit {
@@ -19,9 +20,16 @@ export class TwitchService implements OnModuleInit {
     private cacheManager: Cache,
     private httpService: HttpService,
     private configService: ConfigService,
-  ) {}
+  ) { }
   async onModuleInit() {
     await this.authenticate();
+  }
+
+  // Authenticate with Twitch every week
+  @Cron(CronExpression.EVERY_WEEK)
+  handleCron() {
+    this.logger.log('Executing weekly Twitch authentication...');
+    this.authenticate();
   }
 
   //   Authenticate with Twitch - returns bearer token
