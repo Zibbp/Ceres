@@ -10,7 +10,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import * as argon2 from 'argon2';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UsersRepository } from './users.repository';
-import { User } from './entities/user.entity';
+import { User, UserRole } from './entities/user.entity';
 @Injectable()
 export class UsersService {
   private logger = new Logger('UsersService');
@@ -18,6 +18,34 @@ export class UsersService {
     @InjectRepository(UsersRepository)
     private usersRepository: UsersRepository,
   ) { }
+
+  async onApplicationBootstrap() {
+    // Seed initial user - not the cleanest but it works for now
+    let users;
+    try {
+      users = await this.usersRepository.createQueryBuilder("user").getMany();
+    } catch (error) {
+      this.logger.error('Seeder: Error fetching users')
+    }
+    if (users.length === 0) {
+      try {
+        const createUserDto: CreateUserDto = {
+          username: 'admin',
+          password: 'adminadmin'
+        }
+        const user = await this.create(createUserDto);
+        const updateUserDto: UpdateUserDto = {
+          webhook: '',
+          roles: [UserRole.ADMIN]
+        }
+        await this.adminUpdate(user.id, updateUserDto);
+        this.logger.log('Created initial admin user');
+      } catch (error) {
+        this.logger.error('Seeder: Error creating initial user')
+      }
+    }
+  }
+
   async create(createUserDto: CreateUserDto) {
     const { username, password } = createUserDto;
     let hash: string;
@@ -32,7 +60,8 @@ export class UsersService {
     }
 
     const user = await this.usersRepository.createUser(username, hash);
-    return user;
+    delete user.password
+    return user
   }
 
   async findAll() {
