@@ -19,9 +19,15 @@ ENV NODE_ENV production
 RUN apk update \
     && apk add bash icu-libs krb5-libs libgcc libintl libssl1.1 libstdc++ zlib ffmpeg
 
-RUN mkdir /root/.fonts
+WORKDIR /tmp
 
-ADD ./.github/Inter.otf /root/.fonts/
+COPY ./.github/Inter.otf ./
+
+RUN mkdir -p /usr/share/fonts/opentype/
+
+RUN install -m644 ./Inter.otf /usr/share/fonts/opentype/Inter.otf
+
+RUN rm ./Inter.otf
 
 ARG TWITCHDOWNLOADER_VERSION=1.40.4
 
