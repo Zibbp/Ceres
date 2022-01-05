@@ -17,24 +17,23 @@
   <summary>Table of Contents</summary>
   <ol>
     <li>
-      <a href="#about-the-project">About The Project</a>
-      <ul>
-        <li><a href="#built-with">Built With</a></li>
-      </ul>
+      <a href="#about">About The Project</a>
     </li>
     <li>
       <a href="#getting-started">Getting Started</a>
       <ul>
         <li><a href="#prerequisites">Prerequisites</a></li>
         <li><a href="#installation">Installation</a></li>
+         <li><a href="#logging-in">Logging In</a></li>
+          <li><a href="#archiving-your-first-vod">Archiving</a></li>
+           <li><a href="#monitoring-the-progress">Monitoring</a></li>
       </ul>
     </li>
-    <li><a href="#usage">Usage</a></li>
-    <li><a href="#roadmap">Roadmap</a></li>
-    <li><a href="#contributing">Contributing</a></li>
+    <li><a href="#troubleshooting">Troubleshooting</a></li>
+    <li><a href="#faq">FAQ</a></li>
     <li><a href="#license">License</a></li>
-    <li><a href="#contact">Contact</a></li>
     <li><a href="#acknowledgments">Acknowledgments</a></li>
+    <li><a href="#contact">Contact</a></li>
   </ol>
 </details>
 
@@ -144,16 +143,59 @@ Password: adminadmin
 
 Once logged in please secure your account by doing one of the following.
 
+- Changing the admin password
+- Creating a new account and using the admin account to give your new account admin permissions then deleting the admin account from your account.
+
 ### Archiving Your First VOD
 
 1. Find a Twitch VOD and copy the ID from the URL (should be a string of numbers like 1249966495).
 2. Navigate to the "Archive" page and enter the VOD ID.
    - _Once the ID is entered, click out of the input field to preview the VOD title, thumbnail, duration, and date._
+     ![Demo](.github/archive_page.png)
 3. Click "Archive".
 
 ### Monitoring the Progress
 
 After archiving a VOD you will be redirected to the "queue" page. Here you can view the log of the video download, chat download, and chat render.
 
-- Changing the admin password
-- Creating a new account and using the admin account to give your new account admin permissions then deleting the admin account from your account.
+![Demo](.github/queue_page.png)
+
+## Troubleshooting
+
+### Missing images on the frontend
+
+This is likely because the CDN_URL environment variable for the frontend is wrong. It should point the the Nginx service.
+
+### Frontend unable to connect to the API
+
+Ensure the API_URL environment variable is correctly set in both the frontend and api service.
+
+### What to do when an archive job fails?
+
+If an archiving job fails it will need to be restarted from the beginning. At the moment restart steps have not been added so the queue item and vod entry needs to be deleted from the admin panel. Once both have been removed the the VOD can be submitted for archive again.
+
+## FAQ
+
+### Can I be notified when a VOD is archived?
+
+Yes, under your profile a Discord webhook url can be added to send a webhook when a VOD you submitted is archived.
+
+<!-- LICENSE -->
+
+## License
+
+Distributed under the GNU General Public License. See `LICENSE` for more information.
+
+<!-- ACKNOWLEDGMENTS -->
+
+## Acknowledgments
+
+- [Lay295's TwitchDownloader](https://github.com/lay295/TwitchDownloader) <-- Awesome utility!
+
+<!-- CONTACT -->
+
+## Contact
+
+Discord - `Zibbp#2560`
+
+Email - `On Github Profile`
