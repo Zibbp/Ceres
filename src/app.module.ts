@@ -21,6 +21,7 @@ import { QueuesRepository } from './queues/queues.repository';
 import { VodsRepository } from './vods/vods.repository';
 import { ChannelsRepository } from './channels/channels.repository';
 import { UsersRepository } from './users/users.repository';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -78,6 +79,8 @@ import { UsersRepository } from './users/users.repository';
     QueuesModule,
 
     ExecModule,
+
+    ScheduleModule.forRoot(),
   ],
   controllers: [AppController],
   providers: [
@@ -88,4 +91,4 @@ import { UsersRepository } from './users/users.repository';
     QueuesService,
   ],
 })
-export class AppModule {}
+export class AppModule { }
