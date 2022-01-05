@@ -51,7 +51,8 @@ export class VodsService {
 
     this.logger.verbose(`Archiving vod ${id} requested by ${user.username}`);
     // Check if vod channel is in database, if not create.
-    const checkChannel = await this.channelsRepository.getChannelByName(
+    let checkChannel
+    checkChannel = await this.channelsRepository.getChannelByName(
       vodInfo.user_login,
     );
     if (!checkChannel) {
@@ -61,7 +62,7 @@ export class VodsService {
       const createChannelDto: CreateChannelDto = {
         username: vodInfo.user_login,
       };
-      const channel = await this.channelsService.create(createChannelDto);
+      checkChannel = await this.channelsService.create(createChannelDto);
     }
 
     const safeChannelName = vodInfo.user_login.toLowerCase();
