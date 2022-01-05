@@ -1,22 +1,50 @@
-version: '3.9'
+version: '3.3'
 services:
   ceres:
     container_name: ceres
-    image: zibbp/ceres
-    ports:
-      - '4033:3000'
-    volumes:
-      - '/mnt/vods:/mnt/vods'
-      - './logs:/logs'
+    image: ghcr.io/zibbp/ceres:latest
     environment:
       - PORT=3000
-      - DB_HOST=db
-      - DB_PORT=3306
+      - DB_HOST=ceres-db
+      - DB_PORT=5432
       - DB_USERNAME=ceres
-      - DB_PASSWORD=ceres
+      - DB_PASSWORD=CHANGEME
       - DB_DATABASE=ceres
-      - JWT_SECRET=randomcharacters
+      - JWT_SECRET=CHANGEME
       - JWT_EXPIRATION_TIME=86400
-      - CLIENT_ID=123
-      - CLIENT_SECRET=123
-      - API_URL=https://api.ceres.com
+      - CLIENT_ID=CHANGEME
+      - CLIENT_SECRET=CHANGEME
+      - API_URL=CHANGEME
+    volumes:
+      - /path/to/your/vods:/mnt/vods
+      - ./logs:/logs
+    ports:
+      - 3950:3000
+  ceres-frontend:
+    container_name: ceres-frontend
+    image: ghcr.io/zibbp/ceres-frontend:latest
+    environment:
+      - HOST=0.0.0.0
+      - PORT=3000
+      - API_URL=CHANGEME
+      - CDN_URL=CHANGEME
+      - NODE_ENV=development
+    ports:
+      - 3951:3000
+  ceres-db:
+    container_name: ceres-db
+    image: postgres:14
+    volumes:
+      - ./pg-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=CHANGEME
+      - POSTGRES_USER=ceres
+      - POSTGRES_DB=ceres
+  ceres-cdn:
+    container_name: ceres-cdn
+    image: nginx
+    volumes:
+      - /path/to/nginx.conf:/etc/nginx/nginx.conf:ro
+      - /path/to/your/vods:/mnt/vods
+    ports:
+      - 3952:8080
