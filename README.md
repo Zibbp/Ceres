@@ -74,3 +74,86 @@ Downloaded data is saved in a user friendly way allowing you to keep and browse 
     ├── staysafetv_profile.png
     └── staysafetv_offline_banner.png
 ```
+
+<!-- GETTING STARTED -->
+
+## Getting Started
+
+### Prerequisites
+
+- Linux environment with Docker and Docker Compose installed.
+- _Optional_ Network share mounted for VOD storage (ex /mnt/vods).
+- 50gb+ free space for downloading VODs before moving them to final destination.
+- Twitch application for the client id and secret.
+  - Create an app [here](https://dev.twitch.tv/console/apps/create). Anything can be supplied for the name and callback url.
+
+### Installation
+
+Download a copy of the [`docker-compose.yml`](https://github.com/Zibbp/Ceres/raw/master/docker-compose.yml) and the [`nginx.conf`](https://github.com/Zibbp/Ceres/raw/master/nginx.conf) files.
+
+1. Edit the environment variables and paths. Below are snippets of the env vars and paths from each service that **need** to be changed.
+
+**Ceres**
+
+```
+# ENV
+DB_PASSWORD=CHANGEME    # openssl rand -hex 24
+JWT_SECRET=CHANGEME     # openssl rand -hex 24
+CLIENT_ID=CHANGEME      # Twitch Client ID
+CLIENT_SECRET=CHANGEME  # Twitch Client Secret
+API_URL=CHANGEME        # Http URL to Ceres API (this service) - example http://10.10.10.1:3950 or https://api.ceres.domain.com
+
+# Volumes
+/path/to/your/vods:/mnt/vods  # Change the path to where you vods are stored such as a network share (E.g. /mnt/nas/media/vods:/mnt/vods)
+```
+
+**Ceres-Frontend**
+
+```
+# ENV
+API_URL=CHANGEME        # Http URL to API service (same url used above)
+CDN_URL=CHANGEME        # Http URL Nginx service (http://10.10.10.1:3952 or https://cdn.ceres.domain.com)
+NODE_ENV=development    # If hosting locally (http://IP) use development. If using SSL on a domain set to production to use secure cookies
+```
+
+**Ceres-DB**
+
+```
+# ENV
+POSTGRES_PASSWORD=CHANGEME  # Same password set in the ceres service
+```
+
+**Ceres-CDN**
+
+```
+# Volumes
+/path/to/nginx.conf:/etc/nginx/nginx.conf:ro  # Full path to the nginx conf
+/path/to/your/vods:/mnt/vods                  # Full path to your vod storage location, same as the path in the ceres service
+```
+
+2. Bring up the services `docker-compose up -d`.
+
+### Logging In
+
+Visit the frontend (default port is 3951) and log in with the default credentials.
+
+```
+Username: admin
+Password: adminadmin
+```
+
+Once logged in please secure your account by doing one of the following.
+
+### Archiving Your First VOD
+
+1. Find a Twitch VOD and copy the ID from the URL (should be a string of numbers like 1249966495).
+2. Navigate to the "Archive" page and enter the VOD ID.
+   - _Once the ID is entered, click out of the input field to preview the VOD title, thumbnail, duration, and date._
+3. Click "Archive".
+
+### Monitoring the Progress
+
+After archiving a VOD you will be redirected to the "queue" page. Here you can view the log of the video download, chat download, and chat render.
+
+- Changing the admin password
+- Creating a new account and using the admin account to give your new account admin permissions then deleting the admin account from your account.
