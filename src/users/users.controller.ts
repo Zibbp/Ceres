@@ -16,6 +16,7 @@ import { User, UserRole } from './entities/user.entity';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from 'src/auth/roles.guard';
 import { Roles } from 'src/auth/role.decorator';
+import { UpdateUserPasswordDto } from './dto/update-user-password.dto';
 
 @Controller({ path: 'users', version: '1' })
 export class UsersController {
@@ -44,6 +45,12 @@ export class UsersController {
   @UseGuards(AuthGuard())
   update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto, @GetUser() user: User) {
     return this.usersService.update(id, updateUserDto, user);
+  }
+
+  @Patch('/:id/password')
+  @UseGuards(AuthGuard())
+  updatePassword(@Param('id') id: string, @Body() updateUserPasswordDto: UpdateUserPasswordDto, @GetUser() user: User) {
+    return this.usersService.updatePassword(id, updateUserPasswordDto, user);
   }
 
   @Patch('admin/:id')
