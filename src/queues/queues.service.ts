@@ -86,8 +86,8 @@ export class QueuesService {
         vod.downloading = false;
         await this.vodsRepository.save(vod);
         // Send webhook to notify that the vod is ready
-        this.logger.verbose(`Sending webhook for queue item ${id}.`);
         if (queueItem.user.webhook) {
+          this.logger.verbose(`Sending webhook for queue item ${id}.`);
           await this.sendWebhook(queueItem.user.webhook, vod);
         }
       }
