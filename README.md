@@ -43,6 +43,8 @@
 
 ![Demo](.github/landing_demo.jpg)
 
+https://user-images.githubusercontent.com/21207065/148457965-aaaf922e-8be6-4c02-b132-c3a07b058308.mp4
+
 Ceres is a backend and frontend solution for downloading and viewing Twitch VODs. Ceres uses [Lay295's TwitchDownloader](https://github.com/lay295/TwitchDownloader) to download the video and render the chat. Ceres downloads and saves everything locally meaning the data is yours to keep and no Twitch API calls are made while watching the VOD.
 
 Downloaded data is saved in a user friendly way allowing you to keep and browse your archived vods without needing Ceres. Below is the folder structure for channel and VOD data.
