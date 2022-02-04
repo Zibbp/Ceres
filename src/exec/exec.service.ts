@@ -59,9 +59,7 @@ export class ExecService {
       videoDownloadLog.write(data);
     });
     downloadVideoChild.stderr.on('data', (data) => {
-      this.logger.error(
-        `Video download ${vodInfo['id']} exited with error ${data}`,
-      );
+      this.logger.verbose(`Video download ${vodInfo['id']} stderr: ${data}`);
       videoDownloadLog.write(data);
     });
 
