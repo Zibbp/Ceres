@@ -58,6 +58,10 @@ export class ExecService {
       this.logger.verbose(`Video download ${vodInfo['id']} stdout: ${data}`);
       videoDownloadLog.write(data);
     });
+    downloadVideoChild.stderr.on('data', (data) => {
+      this.logger.verbose(`Video download ${vodInfo['id']} stderr: ${data}`);
+      videoDownloadLog.write(data);
+    });
 
     downloadVideoChild.on('error', (error) => {
       this.logger.error(

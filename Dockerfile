@@ -21,7 +21,7 @@ RUN apk update \
 
 WORKDIR /tmp
 
-COPY ./.github/Inter.otf ./
+COPY ./Inter.otf ./
 
 RUN mkdir -p /usr/share/fonts/opentype/
 
