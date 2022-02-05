@@ -22,6 +22,7 @@ import { VodsRepository } from './vods/vods.repository';
 import { ChannelsRepository } from './channels/channels.repository';
 import { UsersRepository } from './users/users.repository';
 import { ScheduleModule } from '@nestjs/schedule';
+import { MetricsModule } from './metrics/metrics.module';
 
 @Module({
   imports: [
@@ -81,6 +82,8 @@ import { ScheduleModule } from '@nestjs/schedule';
     ExecModule,
 
     ScheduleModule.forRoot(),
+
+    MetricsModule,
   ],
   controllers: [AppController],
   providers: [
