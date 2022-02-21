@@ -29,7 +29,7 @@ RUN install -m644 ./Inter.otf /usr/share/fonts/opentype/Inter.otf
 
 RUN rm ./Inter.otf
 
-ARG TWITCHDOWNLOADER_VERSION=1.40.4
+ARG TWITCHDOWNLOADER_VERSION=1.40.7
 
 WORKDIR /usr/bin
 
