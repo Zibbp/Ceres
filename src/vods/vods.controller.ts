@@ -14,6 +14,7 @@ import {
 import { VodsService } from './vods.service';
 import { CreateVodDto } from './dto/create-vod.dto';
 import { UpdateVodDto } from './dto/update-vod.dto';
+import { ManualCreateVodDto } from './dto/manual-create-vod.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from 'src/auth/roles.guard';
 import { Roles } from 'src/auth/role.decorator';
@@ -26,7 +27,7 @@ export class VodsController {
   constructor(
     private readonly vodsService: VodsService,
     private configService: ConfigService,
-  ) { }
+  ) {}
 
   @Post()
   @UseGuards(AuthGuard(), RolesGuard)
@@ -72,5 +73,15 @@ export class VodsController {
   @Roles(UserRole.ADMIN)
   remove(@Param('id') id: string) {
     return this.vodsService.remove(id);
+  }
+
+  @Post('/manual')
+  @UseGuards(AuthGuard(), RolesGuard)
+  @Roles(UserRole.ARCHIVER, UserRole.ADMIN)
+  manualCreate(
+    @Body() manualCreateVodDto: ManualCreateVodDto,
+    @GetUser() user: User,
+  ) {
+    return this.vodsService.manualCreate(manualCreateVodDto, user);
   }
 }

@@ -1,4 +1,12 @@
-import { HttpException, HttpStatus, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  HttpException,
+  HttpStatus,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { TwitchService } from 'src/twitch/twitch.service';
 import { CreateVodDto } from './dto/create-vod.dto';
@@ -18,6 +26,7 @@ import {
   IPaginationOptions,
 } from 'nestjs-typeorm-paginate';
 import { Vod } from './entities/vod.entity';
+import { ManualCreateVodDto } from './dto/manual-create-vod.dto';
 
 @Injectable()
 export class VodsService {
@@ -46,12 +55,15 @@ export class VodsService {
     }
 
     if (!vodInfo.thumbnail_url) {
-      throw new HttpException('Vod thumbnail not found this likely means the channel is still live or the vod has not been processed yet.', HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        'Vod thumbnail not found this likely means the channel is still live or the vod has not been processed yet.',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
 
     this.logger.verbose(`Archiving vod ${id} requested by ${user.username}`);
     // Check if vod channel is in database, if not create.
-    let checkChannel
+    let checkChannel;
     checkChannel = await this.channelsRepository.getChannelByName(
       vodInfo.user_login,
     );
@@ -172,7 +184,10 @@ export class VodsService {
   async findAllNoPaginate() {
     try {
       const queryBuilder = await this.vodsRepository.createQueryBuilder('vod');
-      queryBuilder.select(['vod', 'channel.id', 'channel.login', 'channel.displayName']).orderBy('vod.createdAt', 'DESC').leftJoin('vod.channel', 'channel')
+      queryBuilder
+        .select(['vod', 'channel.id', 'channel.login', 'channel.displayName'])
+        .orderBy('vod.createdAt', 'DESC')
+        .leftJoin('vod.channel', 'channel');
       return await queryBuilder.getMany();
     } catch (error) {
       throw new InternalServerErrorException('Error finding all vods');
@@ -180,59 +195,108 @@ export class VodsService {
   }
 
   async findOne(id: string) {
-    let vod: object
+    let vod: object;
     try {
-      vod = await this.vodsRepository.getVodById(id)
+      vod = await this.vodsRepository.getVodById(id);
     } catch (error) {
-      throw new NotFoundException(`Vod with id ${id} not found`)
+      throw new NotFoundException(`Vod with id ${id} not found`);
     }
     if (!vod) {
-      throw new NotFoundException(`Vod with id ${id} not found`)
+      throw new NotFoundException(`Vod with id ${id} not found`);
     }
     return vod;
   }
 
   async update(id: string, updateVodDto: UpdateVodDto) {
-    let vod = await this.vodsRepository.getVodById(id)
+    const vod = await this.vodsRepository.getVodById(id);
     if (!vod) {
-      throw new NotFoundException(`Vod with id ${id} not found`)
+      throw new NotFoundException(`Vod with id ${id} not found`);
     }
-    vod.title = updateVodDto.title
-    vod.broadcastType = updateVodDto.broadcastType
-    vod.duration = updateVodDto.duration
-    vod.viewCount = updateVodDto.viewCount
-    vod.resolution = updateVodDto.resolution
-    vod.downloading = updateVodDto.downloading
-    vod.thumbnailPath = updateVodDto.thumbnailPath
-    vod.webThumbnailPath = updateVodDto.webThumbnailPath
-    vod.videoPath = updateVodDto.videoPath
-    vod.chatPath = updateVodDto.chatPath
-    vod.chatVideoPath = updateVodDto.chatVideoPath
-    vod.vodInfoPath = updateVodDto.vodInfoPath
-    vod.createdAt = updateVodDto.createdAt
+    vod.title = updateVodDto.title;
+    vod.broadcastType = updateVodDto.broadcastType;
+    vod.duration = updateVodDto.duration;
+    vod.viewCount = updateVodDto.viewCount;
+    vod.resolution = updateVodDto.resolution;
+    vod.downloading = updateVodDto.downloading;
+    vod.thumbnailPath = updateVodDto.thumbnailPath;
+    vod.webThumbnailPath = updateVodDto.webThumbnailPath;
+    vod.videoPath = updateVodDto.videoPath;
+    vod.chatPath = updateVodDto.chatPath;
+    vod.chatVideoPath = updateVodDto.chatVideoPath;
+    vod.vodInfoPath = updateVodDto.vodInfoPath;
+    vod.createdAt = updateVodDto.createdAt;
 
     try {
-      await this.vodsRepository.save(vod)
+      await this.vodsRepository.save(vod);
     } catch (error) {
-      throw new InternalServerErrorException('Error updating vod')
+      throw new InternalServerErrorException('Error updating vod');
     }
 
-    return vod
+    return vod;
   }
 
   async remove(id: string) {
-    const vod = await this.findOne(id)
-    const channelName = vod['channel']['login'].toLowerCase()
-    const vodPath = `/mnt/vods/${channelName}/${id}`
-    await this.filesService.deleteFolder(vodPath)
+    const vod = await this.findOne(id);
+    const channelName = vod['channel']['login'].toLowerCase();
+    const vodPath = `/mnt/vods/${channelName}/${id}`;
+    await this.filesService.deleteFolder(vodPath);
     try {
-      await this.vodsRepository.delete(vod['id'])
+      await this.vodsRepository.delete(vod['id']);
     } catch (error) {
-      this.logger.error('Error deleting vod', error)
-      throw new InternalServerErrorException('Error deleting vod')
+      this.logger.error('Error deleting vod', error);
+      throw new InternalServerErrorException('Error deleting vod');
     }
     return;
   }
+
+  async manualCreate(manualCreateVodDto: ManualCreateVodDto, user: User) {
+    const checkChannel = await this.channelsRepository.findOne(
+      manualCreateVodDto.channel,
+    );
+    if (!checkChannel) {
+      throw new NotFoundException(
+        `Channel not found with supplied id ${manualCreateVodDto.channel}`,
+      );
+    }
+
+    // Check if vod id exists
+    const checkVodId = await this.vodsRepository.findOne(manualCreateVodDto.id);
+    if (checkVodId) {
+      throw new ConflictException(
+        `VOD exists with supplied id ${manualCreateVodDto.id}`,
+      );
+    }
+
+    try {
+      const vod = await this.vodsRepository.create({
+        id: manualCreateVodDto.id,
+        channel: checkChannel,
+        title: manualCreateVodDto.title,
+        broadcastType: manualCreateVodDto.broadcastType,
+        duration: parseInt(manualCreateVodDto.duration),
+        viewCount: parseInt(manualCreateVodDto.viewCount),
+        resolution: manualCreateVodDto.resolution,
+        downloading: false,
+        thumbnailPath: manualCreateVodDto.thumbnailPath,
+        webThumbnailPath: manualCreateVodDto.webThumbnailPath,
+        videoPath: manualCreateVodDto.videoPath,
+        chatPath: manualCreateVodDto.chatPath,
+        chatVideoPath: manualCreateVodDto.chatVideoPath,
+        vodInfoPath: manualCreateVodDto.vodInfoPath,
+        createdAt: manualCreateVodDto.createdAt,
+      });
+      await this.vodsRepository.save(vod);
+
+      return vod;
+    } catch (error) {
+      this.logger.error('Error manually inserting vod', error);
+      throw new InternalServerErrorException(
+        'Error manually inserting vod',
+        error,
+      );
+    }
+  }
+
   hmsToSeconds(str: string) {
     // eslint-disable-next-line no-var
     var p = str.split(':'),
