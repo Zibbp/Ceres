@@ -19,7 +19,7 @@ export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @OneToMany(() => Queue, (queue) => queue.user)
+  @OneToMany(() => Queue, (queue) => queue.user, { onDelete: 'SET NULL' })
   queues: Queue[];
 
   @Column({ unique: true })
