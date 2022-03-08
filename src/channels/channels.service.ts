@@ -1,7 +1,9 @@
 import {
+  ConflictException,
   HttpException,
   HttpStatus,
   Injectable,
+  InternalServerErrorException,
   Logger,
   NotFoundException,
 } from '@nestjs/common';
@@ -13,6 +15,8 @@ import { ChannelsRepository } from './channels.repository';
 import { CreateChannelDto } from './dto/create-channel.dto';
 import { InternalCreateChannelDto } from './dto/internal-create-channel.dto';
 import { UpdateChannelDto } from './dto/update-channel.dto';
+import { ManualCreateChannelDto } from './dto/manual-create-channel.dto';
+import { User } from 'src/users/entities/user.entity';
 
 @Injectable()
 export class ChannelsService {
@@ -22,7 +26,7 @@ export class ChannelsService {
     private channelsRepository: ChannelsRepository,
     private twitchService: TwitchService,
     private filesService: FilesService,
-  ) {}
+  ) { }
 
   async create(createChannelDto: CreateChannelDto) {
     const { username } = createChannelDto;
@@ -101,11 +105,45 @@ export class ChannelsService {
     return channel;
   }
 
-  update(id: number, updateChannelDto: UpdateChannelDto) {
-    return `This action updates a #${id} channel`;
+  // update(id: number, updateChannelDto: UpdateChannelDto) {
+  //   return `This action updates a #${id} channel`;
+  // }
+
+  async createManual(manualCreateChannelDto: ManualCreateChannelDto) {
+    const checkChannelId = await this.channelsRepository.findOne(
+      manualCreateChannelDto.id,
+    );
+    if (checkChannelId) {
+      throw new ConflictException(
+        'Channel exists with supplied id',
+        manualCreateChannelDto.id,
+      );
+    }
+
+    try {
+      const d = new Date();
+      const channel = await this.channelsRepository.create({
+        id: manualCreateChannelDto.id,
+        login: manualCreateChannelDto.login,
+        displayName: manualCreateChannelDto.displayName,
+        profileImagePath: manualCreateChannelDto.profileImagePath,
+        createdAt: d,
+      });
+      await this.channelsRepository.save(channel);
+      return channel;
+    } catch (error) {
+      this.logger.error('Error creating channel', error);
+      throw new InternalServerErrorException('Error creating channel');
+    }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} channel`;
+  async remove(id: string) {
+    try {
+      await this.channelsRepository.delete(id);
+      return 'deleted';
+    } catch (error) {
+      this.logger.error('Error deleting channel', error);
+      throw new InternalServerErrorException('Error deleting channel');
+    }
   }
 }

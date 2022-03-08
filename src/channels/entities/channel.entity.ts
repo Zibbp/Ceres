@@ -14,7 +14,7 @@ export class Channel {
   @PrimaryColumn({ unique: true })
   id: string;
 
-  @OneToMany(() => Vod, (vod) => vod.channel)
+  @OneToMany(() => Vod, (vod) => vod.channel, { onDelete: 'CASCADE' })
   vods: Vod[];
 
   @Column({ unique: true })

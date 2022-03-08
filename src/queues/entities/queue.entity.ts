@@ -17,7 +17,7 @@ export class Queue {
   @Column()
   vodId: string;
 
-  @ManyToOne(() => User, (user) => user.queues)
+  @ManyToOne(() => User, (user) => user.queues, { onDelete: 'SET NULL' })
   user: User;
 
   // @ManyToOne(() => Vod, (vod) => vod.queue)

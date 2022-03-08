@@ -20,7 +20,7 @@ export class Vod {
   @PrimaryColumn({ unique: true })
   id: string;
 
-  @ManyToOne(() => Channel, (channel) => channel.vods)
+  @ManyToOne(() => Channel, (channel) => channel.vods, { onDelete: 'CASCADE' })
   channel: Channel;
 
   // @OneToMany(() => Queue, (queue) => queue.vod)
