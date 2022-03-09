@@ -27,7 +27,7 @@ export class VodsController {
   constructor(
     private readonly vodsService: VodsService,
     private configService: ConfigService,
-  ) {}
+  ) { }
 
   @Post()
   @UseGuards(AuthGuard(), RolesGuard)
@@ -41,13 +41,18 @@ export class VodsController {
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page = 1,
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit = 20,
     @Query('channel') channelId: string,
+    @Query('search') search: string,
   ) {
     const apiUrl = this.configService.get('API_URL');
     limit = limit > 100 ? 100 : limit;
-    return this.vodsService.paginate(
-      { page, limit, route: `${apiUrl}/v1/vods` },
-      channelId,
-    );
+    if (search) {
+      return this.vodsService.findAllBySearch({ page, limit, route: `${apiUrl}/v1/vods` }, search);
+    } else {
+      return this.vodsService.paginate(
+        { page, limit, route: `${apiUrl}/v1/vods` },
+        channelId,
+      );
+    }
   }
 
   @Get('/all')

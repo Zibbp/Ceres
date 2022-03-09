@@ -181,6 +181,24 @@ export class VodsService {
     return paginate<Vod>(queryBuilder, options);
   }
 
+  async findAllBySearch(
+    options: IPaginationOptions,
+    search: string
+  ): Promise<Pagination<Vod>> {
+    try {
+      const queryBuilder = this.vodsRepository.createQueryBuilder('vod');
+
+      queryBuilder
+        .where('vod.title ILIKE :search', { search: `%${search}%` })
+        .orderBy('vod.createdAt', 'DESC');
+
+      return paginate<Vod>(queryBuilder, options);
+    } catch (error) {
+      this.logger.error('Error searching vods', error);
+      throw new InternalServerErrorException('Error searching vods');
+    }
+  }
+
   async findAllNoPaginate() {
     try {
       const queryBuilder = await this.vodsRepository.createQueryBuilder('vod');
