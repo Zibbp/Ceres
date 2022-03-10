@@ -13,7 +13,9 @@ import {
 export enum BroadcastType {
   ARCHIVE = 'archive',
   LIVE = 'live',
-  HIGHLIGHT = 'highlight'
+  HIGHLIGHT = 'highlight',
+  UPLOAD = 'upload',
+  CLIP = 'clip'
 }
 
 @Entity({ name: 'vods' })
