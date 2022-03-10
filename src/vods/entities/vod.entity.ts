@@ -13,6 +13,7 @@ import {
 export enum BroadcastType {
   ARCHIVE = 'archive',
   LIVE = 'live',
+  HIGHLIGHT = 'highlight'
 }
 
 @Entity({ name: 'vods' })
