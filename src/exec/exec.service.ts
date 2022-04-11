@@ -285,4 +285,149 @@ export class ExecService {
       chatRenderLog.end();
     });
   }
+  async archiveLiveVideo(
+    streamInfo,
+    quality: string,
+    safeChannelName: string,
+    jobId: string,
+  ) {
+    let downloadVideoChild;
+    try {
+      this.logger.verbose(`Spawning Streamlink video downloader for live stream ${streamInfo.id}`);
+      downloadVideoChild = child.spawn('streamlink', [
+        '--output',
+        `/tmp/${streamInfo.id}.ts`,
+        '--twitch-low-latency',
+        '--twitch-disable-ads',
+        '--twitch-disable-hosting',
+        `twitch.tv/${streamInfo.user_name}`,
+        `${quality}`
+      ]);
+    } catch (error) {
+      this.logger.error(
+        `Error spawning Streamlink for live stream ${streamInfo.id}`,
+        error,
+      );
+    }
+
+    // Create log file stream
+    const videoDownloadLog = fs.createWriteStream(
+      `/logs/${streamInfo.id}_live_video_download.log`,
+    );
+
+    process.stdin.pipe(downloadVideoChild.stdin);
+
+    downloadVideoChild.stdout.on('data', (data) => {
+      this.logger.verbose(`Streamlink live video download ${streamInfo.id} stdout: ${data}`);
+      videoDownloadLog.write(data);
+    });
+    downloadVideoChild.stderr.on('data', (data) => {
+      this.logger.verbose(`Streamlink live video ${streamInfo.id} stderr: ${data}`);
+      videoDownloadLog.write(data);
+    });
+
+    downloadVideoChild.on('error', (error) => {
+      this.logger.error(
+        `Streamlink live video ${streamInfo.id} exited with error ${error}`,
+      );
+      throw new InternalServerErrorException(
+        `Streamlink live video ${streamInfo.id} failed with error ${error}`,
+      );
+    });
+
+    downloadVideoChild.on('close', async (code) => {
+      this.logger.verbose(
+        `Streamlink live video ${streamInfo.id} exited.`,
+      );
+      videoDownloadLog.write(
+        `Streamlink live video ${streamInfo.id} exited.`,
+      );
+
+      videoDownloadLog.end();
+
+      // Convert .ts to .mp4
+      this.ffmpegTsToMp4(`/tmp/${streamInfo.id}.ts`, `/tmp/${streamInfo.id}_video.mp4`, streamInfo.id, safeChannelName, jobId);
+      // Move video to final destination
+      // videoDownloadLog.write(
+      //   `Moving video to /mnt/vods/${safeChannelName}/${streamInfo.id}/${streamInfo.id}_video.mp4 ...`,
+      // );
+      // this.logger.verbose(
+      //   `Moving video to /mnt/vods/${safeChannelName}/${streamInfo.id}/${streamInfo.id}_video.mp4 ...`,
+      // );
+      // await this.filesService.moveFile(
+      //   `/tmp/${streamInfo.id}_video.mp4`,
+      //   `/mnt/vods/${safeChannelName}/${streamInfo.id}/`,
+      // );
+      // videoDownloadLog.write(
+      //   `Video moved to /mnt/vods/${safeChannelName}/${streamInfo.id}/${streamInfo.id}_video.mp4`,
+      // );
+      // this.logger.verbose(
+      //   `Video moved to /mnt/vods/${safeChannelName}/${streamInfo.id}/${streamInfo.id}_video.mp4`,
+      // );
+
+      // await this.queuesService.updateProgress(jobId, 'video');
+
+    });
+  }
+  async ffmpegTsToMp4(inputPath: string, outputPath: string, streamId: string, safeChannelName: string, jobId: string) {
+    const ffmpegLog = fs.createWriteStream(
+      `/logs/${streamId}_ffmpeg.log`,
+    );
+
+    const cmd = 'ffmpeg'
+    const args = [
+      '-y',
+      '-i', `${inputPath}`,
+      '-c:v', 'copy',
+      '-c:a', 'copy',
+      `${outputPath}`,
+    ]
+    const ffmpegProcess = child.spawn(cmd, args);
+
+    ffmpegProcess.stdout.on('data', (data) => {
+      this.logger.verbose(`ffmpeg ${streamId} stdout: ${data}`);
+      ffmpegLog.write(data);
+    });
+    ffmpegProcess.stderr.on('data', (data) => {
+      this.logger.verbose(`ffmpeg ${streamId} stderr: ${data}`);
+      ffmpegLog.write(data);
+    });
+
+
+    ffmpegProcess.on('close', async (code) => {
+      ffmpegLog.write(`ffmpeg exited with code ${code}`)
+
+      this.logger.verbose(`ffmpeg ${streamId} exited with code ${code}`);
+
+
+      ffmpegLog.write(
+        `Moving video to /mnt/vods/${safeChannelName}/${streamId}/${streamId}_video.mp4 ...`,
+      );
+      this.logger.verbose(
+        `Moving video to /mnt/vods/${safeChannelName}/${streamId}/${streamId}_video.mp4 ...`,
+      );
+      await this.filesService.moveFile(
+        `/tmp/${streamId}_video.mp4`,
+        `/mnt/vods/${safeChannelName}/${streamId}/`,
+      );
+      ffmpegLog.write(
+        `Video moved to /mnt/vods/${safeChannelName}/${streamId}/${streamId}_video.mp4`,
+      );
+      this.logger.verbose(
+        `Video moved to /mnt/vods/${safeChannelName}/${streamId}/${streamId}_video.mp4`,
+      );
+
+      await this.queuesService.updateProgress(jobId, 'video');
+
+      ffmpegLog.write(
+        `Deleting Streamlink stream .ts file ...`,
+      );
+      this.logger.verbose(
+        `Deleting Streamlink stream .ts file ...`,
+      );
+      child.execSync(`rm ${inputPath}`)
+      ffmpegLog.end()
+    });
+
+  }
 }

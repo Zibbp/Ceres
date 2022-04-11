@@ -27,6 +27,7 @@ import {
 } from 'nestjs-typeorm-paginate';
 import { Vod } from './entities/vod.entity';
 import { ManualCreateVodDto } from './dto/manual-create-vod.dto';
+import { Live } from 'src/live/entities/live.entity';
 
 @Injectable()
 export class VodsService {
@@ -313,6 +314,108 @@ export class VodsService {
         error,
       );
     }
+  }
+
+  // Internal
+  async createLiveVod(live: Live, stream) {
+    const id = stream.id
+
+    const checkVod = await this.vodsRepository.getVodById(id);
+
+    if (checkVod) {
+      this.logger.error("Vod already exists with id", id);
+    }
+
+    this.logger.log(`Creating VOD item for live channel ${stream.user_name}`);
+
+    // Check if vod channel is in database, if not create.
+    let checkChannel;
+    checkChannel = await this.channelsRepository.getChannelByName(
+      live.channel.login,
+    );
+    if (!checkChannel) {
+      this.logger.error(
+        `Live channel not found in database`, live.channel.displayName);
+    }
+
+    // Safe channel name for files
+    const safeChannelName = live.channel.login.toLowerCase();
+
+    // Create vod directory
+    this.logger.verbose(`Creating vod ${id} folder`);
+    await this.filesService.createFolder(`${safeChannelName}/${id}`);
+
+    // Save vod info to json file
+    this.logger.verbose(`Saving vod ${id} info to json file`);
+    await this.filesService.writeFile(
+      `${safeChannelName}/${id}/${id}_info.json`,
+      JSON.stringify(stream),
+    );
+
+    // Save vod thumbnail to file
+    const thumbnailUrl = stream.thumbnail_url
+      .replace('{width}', '1920')
+      .replace('{height}', '1080');
+    const webThumbnailUrl = stream.thumbnail_url
+      .replace('{width}', '640')
+      .replace('{height}', '360');
+    this.logger.verbose(`Downloading vod ${id} thumbnail`);
+    await this.filesService.downloadVodThumnail(
+      thumbnailUrl,
+      `${safeChannelName}/${id}/${id}_thumbnail.jpg`,
+    );
+    this.logger.verbose(`Downloading vod ${id} web thumbnail`);
+    await this.filesService.downloadVodThumnail(
+      webThumbnailUrl,
+      `${safeChannelName}/${id}/${id}_web_thumbnail.jpg`,
+    );
+
+    // Create queue item
+    const createQueue: CreateQueueDto = {
+      vodId: id,
+      title: stream.title,
+      liveArchive: true,
+      videoDone: false,
+      chatDownloadDone: false,
+      chatRenderDone: false,
+      completed: false,
+    };
+    const queue = await this.queuesRepository.createQueueItem(
+      createQueue,
+      live.user
+    );
+
+    this.execService.archiveLiveVideo(
+      stream,
+      'best',
+      safeChannelName,
+      queue.id,
+    );
+    // await this.execService.archiveChat(vodInfo, safeChannelName, queue.id);
+
+    this.logger.verbose(`Creating vod ${id} entrty in database`);
+    // Create vod entry in database
+    const vod = await this.vodsRepository.create({
+      id: id,
+      channel: checkChannel,
+      title: stream.title,
+      broadcastType: stream.type,
+      duration: 1,
+      viewCount: 1,
+      resolution: 'source',
+      downloading: true,
+      thumbnailPath: `/${safeChannelName}/${id}/${id}_thumbnail.jpg`,
+      webThumbnailPath: `/${safeChannelName}/${id}/${id}_web_thumbnail.jpg`,
+      videoPath: `/${safeChannelName}/${id}/${id}_video.mp4`,
+      chatPath: `/${safeChannelName}/${id}/${id}_chat.json`,
+      chatVideoPath: `/${safeChannelName}/${id}/${id}_chat.mp4`,
+      vodInfoPath: `/${safeChannelName}/${id}/${id}_info.json`,
+      createdAt: stream.started_at,
+    });
+    await this.vodsRepository.save(vod);
+
+    return { vod, queue };
+
   }
 
   hmsToSeconds(str: string) {

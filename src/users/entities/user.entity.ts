@@ -1,3 +1,4 @@
+import { Live } from 'src/live/entities/live.entity';
 import { Queue } from 'src/queues/entities/queue.entity';
 import {
   Entity,
@@ -21,6 +22,9 @@ export class User {
 
   @OneToMany(() => Queue, (queue) => queue.user, { onDelete: 'SET NULL' })
   queues: Queue[];
+
+  @OneToMany(() => Live, (live) => live.user, { onDelete: 'CASCADE' })
+  lives: Live[];
 
   @Column({ unique: true })
   username: string;

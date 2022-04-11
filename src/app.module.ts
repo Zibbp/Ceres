@@ -23,6 +23,7 @@ import { ChannelsRepository } from './channels/channels.repository';
 import { UsersRepository } from './users/users.repository';
 import { ScheduleModule } from '@nestjs/schedule';
 import { MetricsModule } from './metrics/metrics.module';
+import { LiveModule } from './live/live.module';
 
 @Module({
   imports: [
@@ -84,6 +85,8 @@ import { MetricsModule } from './metrics/metrics.module';
     ScheduleModule.forRoot(),
 
     MetricsModule,
+
+    LiveModule,
   ],
   controllers: [AppController],
   providers: [

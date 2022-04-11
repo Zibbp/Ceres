@@ -3,7 +3,7 @@ import { TwitchService } from './twitch.service';
 
 @Controller({ path: 'twitch', version: '1' })
 export class TwitchController {
-  constructor(private readonly twitchService: TwitchService) {}
+  constructor(private readonly twitchService: TwitchService) { }
 
   @Get('/authenticate')
   async authenticate() {
@@ -18,5 +18,10 @@ export class TwitchController {
   @Get('/vods')
   async vods(@Query('id') id: string) {
     return await this.twitchService.getVodInfo(id);
+  }
+
+  @Get('/live')
+  async live(@Query('id') id: string) {
+    return await this.twitchService.getLiveInfo(id);
   }
 }

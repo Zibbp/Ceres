@@ -1,14 +1,16 @@
 import { HttpService } from '@nestjs/axios';
 import {
+  BadRequestException,
   CACHE_MANAGER,
   Inject,
   Injectable,
+  InternalServerErrorException,
   Logger,
   NotFoundException,
   OnModuleInit,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, lastValueFrom } from 'rxjs';
 import { Cache } from 'cache-manager';
 import { Cron, CronExpression } from '@nestjs/schedule';
 
@@ -98,5 +100,46 @@ export class TwitchService implements OnModuleInit {
       throw new NotFoundException(`Vod ${id} not found`);
     }
     return response.data.data[0];
+  }
+  async getLiveInfo(id: string) {
+    if (!id) {
+      throw new BadRequestException("No channel id provided");
+    }
+    let response;
+    try {
+      const bearerToken = await this.cacheManager.get('twitchBerarerToken');
+      const headers = {
+        'Client-ID': this.configService.get('CLIENT_ID'),
+        Authorization: `Bearer ${bearerToken}`,
+      };
+      const request = this.httpService.get(
+        `https://api.twitch.tv/helix/streams?user_id=${id}`,
+        { headers },
+      );
+      response = await firstValueFrom(request);
+      return response.data.data[0]
+    } catch (error) {
+      this.logger.error('Error getting live info from Twitch', error);
+      return new InternalServerErrorException('Error getting live info from Twitch')
+    }
+  }
+  // Internal
+  async getLiveInfoFromChannelId(queryString: string) {
+    let response;
+    try {
+      const bearerToken = await this.cacheManager.get('twitchBerarerToken');
+      const headers = {
+        'Client-ID': this.configService.get('CLIENT_ID'),
+        Authorization: `Bearer ${bearerToken}`,
+      };
+      const request = this.httpService.get(
+        `https://api.twitch.tv/helix/streams${queryString}`,
+        { headers },
+      );
+      response = await firstValueFrom(request);
+      return response.data.data
+    } catch (error) {
+      this.logger.error('Error getting streams from query string', error);
+    }
   }
 }
