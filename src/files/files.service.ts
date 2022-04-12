@@ -142,6 +142,59 @@ export class FilesService {
           "msg-id": null
         }
 
+        // Extract emotes and create fragments with positions
+        let emoteFragmentArray = []
+        if (message.emotes) {
+          for await (const emote of message.emotes) {
+            // if emotes are used more than once they have multiple locations
+            for await (const location of emote.locations) {
+              const emotePositions = location.split('-')
+              const pos1 = parseInt(emotePositions[0])
+              const pos2 = parseInt(emotePositions[1]) + 1
+              const slicedEmote = message.message.slice(pos1, pos2)
+              const emoteFragment = {
+                text: slicedEmote,
+                emoticon: {
+                  "emoticon_id": emote.id,
+                  "emoticon_set_id": ""
+                },
+                pos1,
+                pos2
+              }
+              emoteFragmentArray.push(emoteFragment)
+            }
+          }
+        }
+
+
+        // Sort emote fragments by position ascending
+        const sortedEmoteFragmentArray = emoteFragmentArray.sort(function (a, b) { return a.pos1 - b.pos1 })
+
+        // Split message into fragments containing emote and non-emote text
+        const newMessageFragments = []
+        for await (const [index, emoteFragment] of sortedEmoteFragmentArray.entries()) {
+          if (index === 0) {
+            const fragmentText = message.message.slice(0, emoteFragment.pos1)
+            const textFragment = {
+              text: fragmentText,
+              emoticon: null,
+            }
+            newMessageFragments.push(textFragment)
+            newMessageFragments.push(emoteFragment)
+          } else {
+            const fragmentText = message.message.slice(sortedEmoteFragmentArray[index - 1].pos2, emoteFragment.pos1)
+            const textFragment = {
+              text: fragmentText,
+              emoticon: null,
+            }
+            newMessageFragments.push(textFragment)
+            newMessageFragments.push(emoteFragment)
+          }
+        }
+
+        if (newMessageFragments.length > 0) {
+          comment.message.fragments = newMessageFragments
+        }
 
         // Push user badges to object
         if (message.author.badges) {
