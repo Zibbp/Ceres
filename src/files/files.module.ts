@@ -18,4 +18,4 @@ import { FilesService } from './files.service';
   ],
   providers: [FilesService, QueuesService],
 })
-export class FilesModule {}
+export class FilesModule { }

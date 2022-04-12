@@ -11,7 +11,9 @@ import * as cpy from 'cpy';
 @Injectable()
 export class FilesService {
   private logger = new Logger('FilesService');
-  constructor(private httpService: HttpService) { }
+  constructor(
+    private httpService: HttpService,
+  ) { }
   async createFolder(folderName: string) {
     try {
       if (await !fs.existsSync(`/mnt/vods/${folderName}`)) {
@@ -81,6 +83,88 @@ export class FilesService {
     } catch (error) {
       this.logger.error('Error deleting folder', error);
       throw new InternalServerErrorException(`Error deleting folder ${path}`);
+    }
+  }
+  async liveChatParser(path: string, streamInfo) {
+    try {
+      let newChatJson = {
+        "streamer": {
+          "name": streamInfo.user_name,
+          "id": streamInfo.user_id
+        },
+        "comments": []
+      }
+      // Read live stream chat
+      const chatFile = fs.readFileSync(path, 'utf8')
+      const chatJson = JSON.parse(chatFile)
+      //! Beging chat parsing
+      this.logger.log(`Parsing live chat for stream ${streamInfo.id}`)
+      // Use first chat message as start of stream
+      const firstMessageTimestamp = chatJson[0].timestamp.toString()
+      const firstMessageEpoch = firstMessageTimestamp.slice(0, -3)
+      const startTime = new Date(parseInt(firstMessageEpoch))
+      // Loop over each chat message
+      for await (const message of chatJson) {
+        // First message or two is always blank for some reason
+        if (!message.message) {
+          continue
+        }
+        const messageTimestampRaw = message.timestamp.toString()
+        const messageTimestampEpoch = messageTimestampRaw.slice(0, -3)
+        const messageTimestamp = new Date(parseInt(messageTimestampEpoch))
+        // Calculate time offset since first message in seconds
+        const offsetSeconds = (messageTimestamp.getTime() - startTime.getTime()) / 1000
+        // Form new comment object that is supported by TwitchDownloader Chat Rendering
+        let comment = <any>{}
+        // Assign comment properties
+        comment._id = message.message_id
+        comment.source = "chat" // will always be chat
+        comment.content_offset_seconds = offsetSeconds
+        comment.commenter = {}
+        comment.commenter.display_name = message.author.display_name
+        comment.commenter.id = message.author.id
+        comment.commenter.is_moderator = message.author.is_moderator
+        comment.commenter.is_subscriber = message.author.is_subscriber
+        comment.commenter.is_turbo = message.author.is_turbo
+        comment.commenter.name = message.author.name
+        comment.message = {}
+        comment.message.body = message.message
+        comment.message.bits_spent = 0 // chat-downloader does not support bits
+        comment.message.fragments = [
+          {
+            text: message.message,
+            emoticon: null,
+          }
+        ]
+        comment.message.user_badges = []
+        comment.message.user_color = message.colour
+        comment.message.user_notice_params = {
+          "msg-id": null
+        }
+
+
+        // Push user badges to object
+        if (message.author.badges) {
+          for await (const badge of message.author.badges) {
+            let badgeObject = {}
+            badgeObject['_id'] = badge.name
+            badgeObject['version'] = badge.version
+            comment.message.user_badges.push(badgeObject)
+          }
+        }
+        // Some users don't have a color set
+        if (comment.message.user_color == "") {
+          comment.message.user_color = "#a65ee8"
+        }
+
+        // Push comment to new chat object
+        newChatJson.comments.push(comment)
+      }
+      // Write new chat object to file
+      fs.writeFileSync(`/tmp/${streamInfo.id}_live_chat.json`, JSON.stringify(newChatJson))
+      this.logger.log(`Raw stream chat parsed and saved to /tmp/${streamInfo.id}_live_chat.json`)
+    } catch (error) {
+      this.logger.error('Error parsing live chat file', error);
     }
   }
 }

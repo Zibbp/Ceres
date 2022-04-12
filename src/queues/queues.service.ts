@@ -92,8 +92,7 @@ export class QueuesService {
         }
       }
     } catch (error) {
-      this.logger.error(error);
-      throw new InternalServerErrorException();
+      this.logger.error("Error updating queue item final status or sending webhook", error);
     }
     await this.queuesRepository.save(queueItem);
   }

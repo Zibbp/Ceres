@@ -20,4 +20,4 @@ import { ExecService } from './exec.service';
   ],
   providers: [ExecService, QueuesService, FilesService, ConfigService],
 })
-export class ExecModule {}
+export class ExecModule { }

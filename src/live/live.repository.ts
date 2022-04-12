@@ -60,7 +60,7 @@ export class LiveRepository extends Repository<Live> {
                 where: {
                     channel,
                 },
-                relations: ['channel'],
+                relations: ['channel', 'user'],
             });
             live.live = status;
             await this.save(live);

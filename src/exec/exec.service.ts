@@ -285,12 +285,14 @@ export class ExecService {
       chatRenderLog.end();
     });
   }
-  async archiveLiveVideo(
-    streamInfo,
+
+  async archiveLive(streamInfo,
     quality: string,
     safeChannelName: string,
-    jobId: string,
-  ) {
+    jobId: string,) {
+    //?
+    //! Archive Live Video
+    //?
     let downloadVideoChild;
     try {
       this.logger.verbose(`Spawning Streamlink video downloader for live stream ${streamInfo.id}`);
@@ -343,30 +345,73 @@ export class ExecService {
         `Streamlink live video ${streamInfo.id} exited.`,
       );
 
+      downloadChatChild.kill('SIGINT');
+
       videoDownloadLog.end();
 
       // Convert .ts to .mp4
       this.ffmpegTsToMp4(`/tmp/${streamInfo.id}.ts`, `/tmp/${streamInfo.id}_video.mp4`, streamInfo.id, safeChannelName, jobId);
-      // Move video to final destination
-      // videoDownloadLog.write(
-      //   `Moving video to /mnt/vods/${safeChannelName}/${streamInfo.id}/${streamInfo.id}_video.mp4 ...`,
-      // );
-      // this.logger.verbose(
-      //   `Moving video to /mnt/vods/${safeChannelName}/${streamInfo.id}/${streamInfo.id}_video.mp4 ...`,
-      // );
-      // await this.filesService.moveFile(
-      //   `/tmp/${streamInfo.id}_video.mp4`,
-      //   `/mnt/vods/${safeChannelName}/${streamInfo.id}/`,
-      // );
-      // videoDownloadLog.write(
-      //   `Video moved to /mnt/vods/${safeChannelName}/${streamInfo.id}/${streamInfo.id}_video.mp4`,
-      // );
-      // this.logger.verbose(
-      //   `Video moved to /mnt/vods/${safeChannelName}/${streamInfo.id}/${streamInfo.id}_video.mp4`,
-      // );
+    });
 
-      // await this.queuesService.updateProgress(jobId, 'video');
+    //? 
+    // !Archive Live Chat
+    //?
+    let downloadChatChild;
+    try {
+      this.logger.verbose(`Spawning chat downloader for live stream ${streamInfo.id}`);
+      downloadChatChild = child.spawn('chat_downloader', [
+        `https://twitch.tv/${streamInfo.user_name}`,
+        '--output',
+        `/tmp/${streamInfo.id}_live_raw_chat.json`,
+        '-q'
+      ]);
+    } catch (error) {
+      this.logger.error(
+        `Error spawning chat download for live stream  ${streamInfo.id}}`,
+        error,
+      );
+      throw new InternalServerErrorException(
+        `Error spawning chat download for live stream  ${streamInfo.id}}`,
+      );
+    }
 
+    // Create log file stream
+    const chatDownloadLog = fs.createWriteStream(
+      `/logs/${streamInfo.id}_live_chat_download.log`,
+    );
+
+    process.stdin.pipe(downloadChatChild.stdin);
+
+    downloadChatChild.stdout.on('data', (data) => {
+      this.logger.verbose(`Live chat download ${streamInfo.id} stdout: ${data}`);
+      chatDownloadLog.write(data);
+    });
+
+    downloadChatChild.on('error', (error) => {
+      this.logger.error(
+        `Live stream chat download ${streamInfo.id} exited with error ${error}`,
+      );
+      throw new InternalServerErrorException(
+        `Live stream chat download ${streamInfo.id} failed with error ${error}`,
+      );
+    });
+
+    downloadChatChild.on('close', async (code) => {
+      this.logger.verbose(
+        `Live stream chat download ${streamInfo.id} exited.`,
+      );
+      chatDownloadLog.write(
+        `Live stream chat download ${streamInfo.id} exited.`,
+      );
+
+      await this.filesService.liveChatParser(`/tmp/${streamInfo.id}_live_raw_chat.json`, streamInfo);
+
+      await this.queuesService.updateProgress(jobId, 'chatDownload');
+
+      this.logger.log(`Executing chat render for live stream ${streamInfo.id}`)
+      this.renderLiveChat(streamInfo, safeChannelName, jobId);
+
+      chatDownloadLog.end();
     });
   }
   async ffmpegTsToMp4(inputPath: string, outputPath: string, streamId: string, safeChannelName: string, jobId: string) {
@@ -377,6 +422,7 @@ export class ExecService {
     const cmd = 'ffmpeg'
     const args = [
       '-y',
+      '-hide_banner',
       '-i', `${inputPath}`,
       '-c:v', 'copy',
       '-c:a', 'copy',
@@ -429,5 +475,119 @@ export class ExecService {
       ffmpegLog.end()
     });
 
+  }
+  async renderLiveChat(streamInfo, safeChannelName: string, jobId: string) {
+    let renderChatChild;
+    try {
+      this.logger.verbose(`Spawning chat render for live stream ${streamInfo.id}`);
+      renderChatChild = child.spawn('TwitchDownloaderCLI', [
+        '-m',
+        'ChatRender',
+        '-i',
+        `/tmp/${streamInfo.id}_live_chat.json`,
+        '-h',
+        '1440',
+        '-w',
+        '340',
+        '--framerate',
+        '30',
+        '--font',
+        'Inter',
+        '--font-size',
+        '13',
+        '-o',
+        `/tmp/${streamInfo.id}_chat.mp4`,
+      ]);
+    } catch (error) {
+      this.logger.error(
+        `Error spawning chat render for live stream ${streamInfo.id}`,
+        error,
+      );
+      throw new InternalServerErrorException(
+        `Error spawning chat render for live stream ${streamInfo.id}`,
+      );
+    }
+
+    // Create log file stream
+    const chatRenderLog = fs.createWriteStream(
+      `/logs/${streamInfo.id}_live_chat_render.log`,
+    );
+
+    process.stdin.pipe(renderChatChild.stdin);
+
+    renderChatChild.stdout.on('data', (data) => {
+      this.logger.verbose(`Live chat render ${streamInfo.id} stdout: ${data}`);
+      chatRenderLog.write(data);
+    });
+
+    renderChatChild.on('error', (error) => {
+      this.logger.error(
+        `Live chat render ${streamInfo.id} exited with error ${error}`,
+      );
+    });
+
+    renderChatChild.on('close', async (code) => {
+      this.logger.verbose(
+        `Live chat render ${streamInfo.id} coded with code ${code}`,
+      );
+      if (code !== 0) {
+        this.logger.error(
+          `Live chat render ${streamInfo.id} exited with code ${code}`,
+        );
+        chatRenderLog.write(
+          `Live chat render ${streamInfo.id} exited with code ${code}`,
+        );
+        chatRenderLog.end();
+        throw new InternalServerErrorException(
+          `Live chat render ${streamInfo.id} failed with code ${code}`,
+        );
+      }
+      chatRenderLog.write(
+        `Live chat render ${streamInfo.id} exited with code ${code}`,
+      );
+
+      // Move chat to final destination
+      this.logger.verbose(
+        `Moving chat files for stream ${streamInfo.id}`,
+      );
+      chatRenderLog.write(
+        `Moving chat files for stream ${streamInfo.id}`,
+      );
+      await this.filesService.moveFile(
+        `/tmp/${streamInfo.id}_live_chat.json`,
+        `/mnt/vods/${safeChannelName}/${streamInfo.id}/`,
+      );
+      await this.filesService.moveFile(
+        `/tmp/${streamInfo.id}_live_raw_chat.json`,
+        `/mnt/vods/${safeChannelName}/${streamInfo.id}/`,
+      );
+      this.logger.verbose(
+        `Moved chat files for stream ${streamInfo.id}`,
+      );
+      chatRenderLog.write(
+        `Moved chat files for stream ${streamInfo.id}`,
+      );
+      // Move chat render to final destination
+      this.logger.verbose(
+        `Moving chat render for stream ${streamInfo.id}`,
+      );
+      chatRenderLog.write(
+        `Moving chat render for stream ${streamInfo.id}`,
+      );
+      await this.filesService.moveFile(
+        `/tmp/${streamInfo.id}_chat.mp4`,
+        `/mnt/vods/${safeChannelName}/${streamInfo.id}/`,
+      );
+      this.logger.verbose(
+        `Moved chat render for stream ${streamInfo.id}`,
+      );
+      chatRenderLog.write(
+        `Moved chat render for stream ${streamInfo.id}`,
+      );
+
+      await this.queuesService.updateProgress(jobId, 'chatRender');
+
+      chatRenderLog.end();
+    });
   }
 }

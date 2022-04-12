@@ -28,6 +28,7 @@ import {
 import { Vod } from './entities/vod.entity';
 import { ManualCreateVodDto } from './dto/manual-create-vod.dto';
 import { Live } from 'src/live/entities/live.entity';
+import { UsersRepository } from 'src/users/users.repository';
 
 @Injectable()
 export class VodsService {
@@ -39,6 +40,8 @@ export class VodsService {
     private channelsRepository: ChannelsRepository,
     @InjectRepository(QueuesRepository)
     private queuesRepository: QueuesRepository,
+    @InjectRepository(UsersRepository)
+    private usersRepository: UsersRepository,
     private twitchService: TwitchService,
     private filesService: FilesService,
     private channelsService: ChannelsService,
@@ -385,7 +388,7 @@ export class VodsService {
       live.user
     );
 
-    this.execService.archiveLiveVideo(
+    this.execService.archiveLive(
       stream,
       'best',
       safeChannelName,

@@ -47,6 +47,7 @@ export class QueuesRepository extends Repository<Queue> {
     try {
       queue = this.create({
         vodId,
+        user: user,
         title,
         liveArchive,
         videoDone,

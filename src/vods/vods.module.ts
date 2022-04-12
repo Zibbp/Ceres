@@ -38,4 +38,4 @@ import { UsersRepository } from 'src/users/users.repository';
     QueuesService,
   ],
 })
-export class VodsModule {}
+export class VodsModule { }
