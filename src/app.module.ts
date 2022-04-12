@@ -24,6 +24,7 @@ import { UsersRepository } from './users/users.repository';
 import { ScheduleModule } from '@nestjs/schedule';
 import { MetricsModule } from './metrics/metrics.module';
 import { LiveModule } from './live/live.module';
+import { LiveRepository } from './live/live.repository';
 
 @Module({
   imports: [
@@ -60,6 +61,7 @@ import { LiveModule } from './live/live.module';
       VodsRepository,
       ChannelsRepository,
       UsersRepository,
+      LiveRepository
     ]),
 
     AuthModule,

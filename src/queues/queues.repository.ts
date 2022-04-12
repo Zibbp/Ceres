@@ -42,6 +42,7 @@ export class QueuesRepository extends Repository<Queue> {
       chatDownloadDone,
       chatRenderDone,
       completed,
+      channelName
     } = createQueue;
     let queue: Queue;
     try {
@@ -54,6 +55,7 @@ export class QueuesRepository extends Repository<Queue> {
         chatDownloadDone,
         chatRenderDone,
         completed,
+        channelName
       });
       await this.save(queue);
     } catch (error) {

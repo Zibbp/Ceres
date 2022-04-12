@@ -85,10 +85,11 @@ export class QueuesService {
         const vod = await this.vodsRepository.getVodById(queueItem.vodId);
         vod.downloading = false;
         await this.vodsRepository.save(vod);
-        // Send webhook to notify that the vod is ready
+
+        // Send webhook to notify that the vod is complete
         if (queueItem.user.webhook) {
           this.logger.verbose(`Sending webhook for queue item ${id}.`);
-          await this.sendWebhook(queueItem.user.webhook, vod);
+          await this.sendWebhook(queueItem.user.webhook, vod, queueItem);
         }
       }
     } catch (error) {
@@ -149,28 +150,54 @@ export class QueuesService {
       }
     }
   }
-  async sendWebhook(webhookUrl: string, vod: Vod) {
+  async sendWebhook(webhookUrl: string, vod: Vod, queueItem: Queue) {
     try {
       const embeds = [
         {
-          title: 'VOD Archived',
-          color: 5174599,
-          fields: [
+          "title": "VOD Archived",
+          "description": "",
+          "color": 4321431,
+          "timestamp": new Date(),
+          "url": "https://github.com/Zibbp/Ceres",
+          "author": {
+            "name": "Ceres",
+            "url": "https://discord.com",
+            "icon_url": "https://raw.githubusercontent.com/Zibbp/Ceres/master/.github/ceres_logo_full.png"
+          },
+          "thumbnail": {
+            "url": ""
+          },
+          "image": {
+            "url": ""
+          },
+          "footer": {
+            "text": "",
+            "icon_url": ""
+          },
+          "fields": [
             {
-              name: 'Channel',
-              value: vod.channel.displayName,
+              "name": "Title",
+              "value": vod.title,
+              "inline": false
             },
             {
-              name: 'ID',
-              value: vod.id,
+              "name": "ID",
+              "value": vod.id,
+              "inline": true
             },
             {
-              name: 'Title',
-              value: vod.title,
+              "name": "Channel",
+              "value": vod.channel.displayName,
+              "inline": true
             },
-          ],
-        },
-      ];
+            {
+              "name": "Live Archive",
+              "value": (queueItem.liveArchive) ? ':white_check_mark:' : ':x:',
+              "inline": true
+            }
+          ]
+        }
+      ]
       const webhookReq = this.httpService.post(webhookUrl, { embeds });
       await firstValueFrom(webhookReq);
     } catch (error) {

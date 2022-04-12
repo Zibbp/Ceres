@@ -8,6 +8,7 @@ import { Live } from './entities/live.entity';
 import { EntityRepository, Repository } from 'typeorm';
 import { Channel } from 'src/channels/entities/channel.entity';
 import { User } from 'src/users/entities/user.entity';
+import { UpdateLiveDto } from './dto/update-live.dto';
 
 @EntityRepository(Live)
 export class LiveRepository extends Repository<Live> {
@@ -46,6 +47,13 @@ export class LiveRepository extends Repository<Live> {
     async findAll() {
         return await this.find({ relations: ['channel'] });
     }
+    async findById(id: string) {
+        try {
+            return await this.findOne(id, { relations: ['channel'] });
+        } catch (error) {
+            this.logger.error('Error finding channel', error);
+        }
+    }
     async findAllNotLive() {
         return await this.find({
             where: {
@@ -53,6 +61,16 @@ export class LiveRepository extends Repository<Live> {
             },
             relations: ['channel', 'user'],
         });
+    }
+    async updateLiveChannel(id: string, updateLiveDto: UpdateLiveDto) {
+        try {
+            const live = await this.findOne(id);
+            live.live = updateLiveDto.live;
+            await this.save(live);
+            return live;
+        } catch (error) {
+            this.logger.error('Error updating channel', error);
+        }
     }
     async updateLiveChannelStatus(channel: Channel, status: boolean): Promise<Live> {
         try {
@@ -66,7 +84,22 @@ export class LiveRepository extends Repository<Live> {
             await this.save(live);
             return live;
         } catch (error) {
-            this.logger.error('Error updating channel', error);
+            this.logger.error('Error updating channel status', error);
+        }
+    }
+    async updateLiveChannelLastLive(channel: Channel, lastLive: Date) {
+        try {
+            const live = await this.findOne({
+                where: {
+                    channel,
+                },
+                relations: ['channel', 'user'],
+            });
+            live.lastLive = lastLive;
+            await this.save(live);
+            return live;
+        } catch (error) {
+            this.logger.error('Error updating channel last live', error);
         }
     }
 }

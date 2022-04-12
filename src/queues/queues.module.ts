@@ -7,6 +7,7 @@ import { QueuesRepository } from './queues.repository';
 import { UsersRepository } from 'src/users/users.repository';
 import { HttpModule } from '@nestjs/axios';
 import { AuthModule } from 'src/auth/auth.module';
+import { LiveRepository } from 'src/live/live.repository';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { AuthModule } from 'src/auth/auth.module';
       VodsRepository,
       QueuesRepository,
       UsersRepository,
+      LiveRepository
     ]),
     HttpModule,
     AuthModule

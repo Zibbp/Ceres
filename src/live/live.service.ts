@@ -23,7 +23,7 @@ export class LiveService {
   ) { }
 
   // Check if channels are live (5 minutes)
-  @Cron(CronExpression.EVERY_5_SECONDS)
+  @Cron(CronExpression.EVERY_5_MINUTES)
   async handleCron() {
     this.logger.verbose('Checking if channels are live');
     await this.cronChannelLiveCheck();
@@ -117,9 +117,24 @@ export class LiveService {
       this.logger.error('Error checking if channels are live', error);
     }
   }
-  // findOne(id: number) {
-  //   return `This action returns a #${id} live`;
-  // }
+  async findOne(id: string) {
+    try {
+      const liveChannelEntry = await this.liveRepository.findById(id);
+      return liveChannelEntry
+    } catch (error) {
+      this.logger.error('Error finding live channel', error)
+      return new InternalServerErrorException("Error finding live channel");
+    }
+  }
+  async update(id: string, updateLiveDto: UpdateLiveDto) {
+    try {
+      const updateLiveChannel = await this.liveRepository.updateLiveChannel(id, updateLiveDto);
+      return updateLiveChannel
+    } catch (error) {
+      this.logger.error('Error updating live channel', error);
+      return new InternalServerErrorException("Error updating live channel");
+    }
+  }
 
   // update(id: number, updateLiveDto: UpdateLiveDto) {
   //   return `This action updates a #${id} live`;

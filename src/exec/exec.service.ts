@@ -3,9 +3,12 @@ import {
   InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
 import * as child from 'child_process';
 import * as fs from 'fs';
+import { Channel } from 'src/channels/entities/channel.entity';
 import { FilesService } from 'src/files/files.service';
+import { LiveRepository } from 'src/live/live.repository';
 import { QueuesService } from 'src/queues/queues.service';
 
 @Injectable()
@@ -14,6 +17,8 @@ export class ExecService {
   constructor(
     private filesService: FilesService,
     private queuesService: QueuesService,
+    @InjectRepository(LiveRepository)
+    private liveRepository: LiveRepository,
   ) { }
 
   async archiveVideo(
@@ -289,7 +294,8 @@ export class ExecService {
   async archiveLive(streamInfo,
     quality: string,
     safeChannelName: string,
-    jobId: string,) {
+    jobId: string,
+    channel: Channel) {
     //?
     //! Archive Live Video
     //?
@@ -345,7 +351,12 @@ export class ExecService {
         `Streamlink live video ${streamInfo.id} exited.`,
       );
 
+      // Stream is offline, send kill to chat downloader
       downloadChatChild.kill('SIGINT');
+
+      // Mark live channel as offline and enter last live time
+      await this.liveRepository.updateLiveChannelStatus(channel, false);
+      await this.liveRepository.updateLiveChannelLastLive(channel, new Date());
 
       videoDownloadLog.end();
 
@@ -379,6 +390,8 @@ export class ExecService {
     const chatDownloadLog = fs.createWriteStream(
       `/logs/${streamInfo.id}_live_chat_download.log`,
     );
+
+    chatDownloadLog.write("Live chat downloader started. It it unlikey you will see any further output in this log.\n");
 
     process.stdin.pipe(downloadChatChild.stdin);
 

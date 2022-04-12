@@ -13,11 +13,12 @@ export class AuthService {
     @InjectRepository(UsersRepository)
     private usersRepository: UsersRepository,
     private jwtService: JwtService,
-  ) {}
+  ) { }
   async login(authCredentialsDto: AuthCredentialsDto) {
     const { username, password } = authCredentialsDto;
 
-    const user = await this.usersRepository.findUser(username);
+    const user = await this.usersRepository.createQueryBuilder("user").where("user.username = :username", { username }).addSelect("user.password").getOne();
+
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }

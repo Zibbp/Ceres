@@ -15,4 +15,6 @@ export class CreateQueueDto {
   chatRenderDone: boolean;
   @IsBoolean()
   completed: boolean;
+  @IsString()
+  channelName: string;
 }

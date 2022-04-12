@@ -38,6 +38,9 @@ export class Queue {
   @Column({ default: false })
   public completed: boolean;
 
+  @Column({ nullable: true })
+  public channelName: string
+
   @CreateDateColumn()
   createdAt: Date;
 

@@ -121,6 +121,7 @@ export class VodsService {
       chatDownloadDone: false,
       chatRenderDone: false,
       completed: false,
+      channelName: checkChannel.displayName
     };
     const queue = await this.queuesRepository.createQueueItem(
       createQueue,
@@ -382,6 +383,7 @@ export class VodsService {
       chatDownloadDone: false,
       chatRenderDone: false,
       completed: false,
+      channelName: checkChannel.displayName
     };
     const queue = await this.queuesRepository.createQueueItem(
       createQueue,
@@ -393,6 +395,7 @@ export class VodsService {
       'best',
       safeChannelName,
       queue.id,
+      checkChannel
     );
     // await this.execService.archiveChat(vodInfo, safeChannelName, queue.id);
 
