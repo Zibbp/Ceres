@@ -1,3 +1,4 @@
+
 FROM node:16-alpine3.12 as builder
 
 ENV NODE_ENV build
@@ -17,7 +18,9 @@ ENV NODE_ENV production
 
 # Install dependencies (ffmpeg, twitchdownloader, Inter font)
 RUN apk update \
-    && apk add bash icu-libs krb5-libs libgcc libintl libssl1.1 libstdc++ zlib ffmpeg
+    && apk add bash icu-libs krb5-libs libgcc libintl libssl1.1 libstdc++ zlib ffmpeg py3-pip libxml2-dev libxslt-dev python-dev gcc g++
+
+RUN pip3 install lxml
 
 WORKDIR /tmp
 
@@ -37,6 +40,10 @@ RUN wget https://github.com/lay295/TwitchDownloader/releases/download/$TWITCHDOW
     && unzip TwitchDownloaderCLI-LinuxAlpine-x64.zip \
     && chmod +x TwitchDownloaderCLI \
     && rm TwitchDownloaderCLI-LinuxAlpine-x64.zip
+
+RUN pip install streamlink chat-downloader
+
+ENV PATH="~/.local/bin:$PATH"
 
 USER node
 WORKDIR /usr/src/app
