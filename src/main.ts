@@ -4,7 +4,9 @@ import { AppModule } from './app.module';
 import * as helmet from 'helmet';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    logger: process.env.LOG_LEVEL === 'debug' ? ['log', 'debug', 'error', 'verbose', 'warn'] : ['error', 'warn', 'log'],
+  });
   app.use(helmet());
   app.enableCors({
     origin: '*',
