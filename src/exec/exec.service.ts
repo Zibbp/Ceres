@@ -10,6 +10,7 @@ import { Channel } from 'src/channels/entities/channel.entity';
 import { FilesService } from 'src/files/files.service';
 import { LiveRepository } from 'src/live/live.repository';
 import { QueuesService } from 'src/queues/queues.service';
+import { VodsRepository } from 'src/vods/vods.repository';
 
 @Injectable()
 export class ExecService {
@@ -19,6 +20,8 @@ export class ExecService {
     private queuesService: QueuesService,
     @InjectRepository(LiveRepository)
     private liveRepository: LiveRepository,
+    @InjectRepository(VodsRepository)
+    private vodsRepository: VodsRepository
   ) { }
 
   async archiveVideo(
@@ -458,6 +461,12 @@ export class ExecService {
 
       this.logger.verbose(`ffmpeg ${streamId} exited with code ${code}`);
 
+      // Get video duration and update database
+      ffmpegLog.write(`Fetching video duration...`)
+      const duration = child.execSync(`ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 ${outputPath}`);
+      const durationInSeconds = parseInt(duration.toString().trim());
+      ffmpegLog.write(`Video duration: ${durationInSeconds}`)
+      this.vodsRepository.updateVodLength(streamId, durationInSeconds)
 
       ffmpegLog.write(
         `Moving video to /mnt/vods/${safeChannelName}/${streamId}/${streamId}_video.mp4 ...`,

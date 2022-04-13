@@ -14,4 +14,13 @@ export class VodsRepository extends Repository<Vod> {
     }
     return vod;
   }
+  async updateVodLength(id: string, length: number) {
+    try {
+      const vod = await this.findOne({ where: { id } });
+      vod.duration = length;
+      await this.save(vod);
+    } catch (error) {
+      this.logger.error('Error updating vod duration', error);
+    }
+  }
 }
