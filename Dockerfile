@@ -18,7 +18,7 @@ ENV NODE_ENV production
 
 # Install dependencies (ffmpeg, twitchdownloader, Inter font)
 RUN apk update \
-    && apk add bash icu-libs krb5-libs libgcc libintl libssl1.1 libstdc++ zlib ffmpeg py3-pip libxml2-dev libxslt-dev python-dev gcc g++
+    && apk add bash icu-libs krb5-libs libgcc libintl libssl1.1 libstdc++ zlib ffmpeg py3-pip libxml2-dev libxslt-dev python3-dev gcc g++
 
 RUN pip3 install lxml
 
