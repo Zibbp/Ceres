@@ -106,7 +106,7 @@ export class UsersService {
     }
     let dbUser;
     try {
-      dbUser = await this.usersRepository.findOneOrFail({ id: user.id });
+      dbUser = await this.usersRepository.createQueryBuilder("user").where("user.id = :id", { id: user.id }).addSelect("user.password").getOne();
     } catch (error) {
       throw new NotFoundException('User not found');
     }

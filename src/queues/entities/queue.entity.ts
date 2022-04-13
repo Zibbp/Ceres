@@ -20,9 +20,6 @@ export class Queue {
   @ManyToOne(() => User, (user) => user.queues, { onDelete: 'SET NULL' })
   user: User;
 
-  // @ManyToOne(() => Vod, (vod) => vod.queue)
-  // vod: Vod;
-
   @Column({ nullable: true })
   title: string;
 
@@ -40,6 +37,9 @@ export class Queue {
 
   @Column({ default: false })
   public completed: boolean;
+
+  @Column({ nullable: true })
+  public channelName: string
 
   @CreateDateColumn()
   createdAt: Date;

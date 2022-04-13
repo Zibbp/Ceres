@@ -3,6 +3,7 @@ import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { FilesService } from 'src/files/files.service';
+import { LiveRepository } from 'src/live/live.repository';
 import { QueuesRepository } from 'src/queues/queues.repository';
 import { QueuesService } from 'src/queues/queues.service';
 import { UsersRepository } from 'src/users/users.repository';
@@ -15,9 +16,10 @@ import { ExecService } from './exec.service';
       QueuesRepository,
       VodsRepository,
       UsersRepository,
+      LiveRepository
     ]),
     HttpModule,
   ],
   providers: [ExecService, QueuesService, FilesService, ConfigService],
 })
-export class ExecModule {}
+export class ExecModule { }

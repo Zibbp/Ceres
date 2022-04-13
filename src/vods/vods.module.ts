@@ -14,6 +14,7 @@ import { QueuesRepository } from 'src/queues/queues.repository';
 import { ExecService } from 'src/exec/exec.service';
 import { QueuesService } from 'src/queues/queues.service';
 import { UsersRepository } from 'src/users/users.repository';
+import { LiveRepository } from 'src/live/live.repository';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { UsersRepository } from 'src/users/users.repository';
       ChannelsRepository,
       QueuesRepository,
       UsersRepository,
+      LiveRepository
     ]),
     AuthModule,
     CacheModule.register(),
@@ -38,4 +40,4 @@ import { UsersRepository } from 'src/users/users.repository';
     QueuesService,
   ],
 })
-export class VodsModule {}
+export class VodsModule { }
