@@ -99,7 +99,7 @@ export class LiveService {
           // channels in this loop are live, set them to live and proceed to archive
           for await (const [index, stream] of checkStreams.entries()) {
             // Update channel in live watch list
-            this.logger.log(`Channel ${stream.user_name} is live. Updating status in live watch list`);
+            this.logger.log(`Channel ${stream.user_name} is live.`);
             const live = await this.liveRepository.updateLiveChannelStatus(stream.user_id, true);
 
             // Create VOD item
