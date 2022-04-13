@@ -371,6 +371,9 @@ export class ExecService {
     // !Archive Live Chat
     //?
     let downloadChatChild;
+    this.logger.debug('Chat download requested')
+    await new Promise(resolve => setTimeout(resolve, 3000));
+    this.logger.debug('Chat download started')
     try {
       this.logger.verbose(`Spawning chat downloader for live stream ${streamInfo.id}`);
       downloadChatChild = child.spawn('chat_downloader', [
