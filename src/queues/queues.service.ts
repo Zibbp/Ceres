@@ -192,7 +192,7 @@ export class QueuesService {
             },
             {
               "name": "Live Archive",
-              "value": (queueItem.liveArchive) ? ':white_check_mark:' : ':x:',
+              "value": (queueItem.liveArchive) ? '✅' : '❌',
               "inline": true
             }
           ]
