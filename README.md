@@ -8,9 +8,17 @@
   <h2 align="center">Ceres</h2>
 
   <p align="center">
-    Archive Twitch VODs with a rendered chat.
+    Archive Twitch Streams and VODs with a rendered chat.
   </p>
 </div>
+
+---
+
+### v0.0.6 Update
+
+Archiving live streams is finally here! Update v0.0.6 brings support to archive both the video stream and the chat of a live stream. Check out the [wiki page](https://github.com/Zibbp/Ceres/wiki/Live-Stream-Archiving#update-v006-includes-the-ability-to-archive-live-streams) for more information.
+
+---
 
 <!-- TABLE OF CONTENTS -->
 <details>
@@ -43,9 +51,9 @@
 
 ![Demo](.github/landing_demo.jpg)
 
-https://user-images.githubusercontent.com/21207065/148457965-aaaf922e-8be6-4c02-b132-c3a07b058308.mp4
+https://user-images.githubusercontent.com/21207065/163433325-4a64f22d-0e43-475b-99d6-f74598333864.mp4
 
-Ceres is a backend and frontend solution for downloading and viewing Twitch VODs. Ceres uses [Lay295's TwitchDownloader](https://github.com/lay295/TwitchDownloader) to download the video and render the chat. Ceres downloads and saves everything locally meaning the data is yours to keep and no Twitch API calls are made while watching the VOD.
+Ceres is an application for downloading and viewing past Twitch streams and VODs. Ceres uses [Lay295's TwitchDownloader](https://github.com/lay295/TwitchDownloader) to download the video and render the chat. All archived vods are downloaded locally to keep forever.
 
 Downloaded data is saved in a user friendly way allowing you to keep and browse your archived vods without needing Ceres. Below is the folder structure for channel and VOD data.
 
@@ -180,7 +188,7 @@ If an archiving job fails it will need to be restarted from the beginning. At th
 
 ### Can I be notified when a VOD is archived?
 
-Yes, under your profile a Discord webhook url can be added to send a webhook when a VOD you submitted is archived.
+Yes, under your profile a webhook url can be added to send a webhook when a VOD you submitted is archived.
 
 <!-- LICENSE -->
 
