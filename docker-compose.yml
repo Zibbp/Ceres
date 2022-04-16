@@ -2,7 +2,7 @@ version: '3.3'
 services:
   ceres:
     container_name: ceres
-    image: ghcr.io/zibbp/ceres:latest
+    image: ghcr.io/zibbp/ceres:master
     environment:
       - PORT=3000
       - DB_HOST=ceres-db
