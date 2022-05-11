@@ -12,4 +12,5 @@ export const configValidationSchema = Joi.object({
   CLIENT_ID: Joi.string().required(),
   CLIENT_SECRET: Joi.string().required(),
   API_URL: Joi.string().required(),
+  LIVE_CRON_SCHEDULE: Joi.string(),
 });
