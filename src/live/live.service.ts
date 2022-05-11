@@ -1,5 +1,5 @@
 import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
+import { Cron, CronExpression, SchedulerRegistry } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ChannelsService } from 'src/channels/channels.service';
 import { Channel } from 'src/channels/entities/channel.entity';
@@ -10,23 +10,48 @@ import { CreateLiveDto } from './dto/create-live.dto';
 import { UpdateLiveDto } from './dto/update-live.dto';
 import { Live } from './entities/live.entity';
 import { LiveRepository } from './live.repository';
+import { ConfigService } from '@nestjs/config';
+import { CronJob } from 'cron';
 
 @Injectable()
 export class LiveService {
   private logger = new Logger('LiveService');
+  private cronSchedule = this.configService.get('LIVE_CRON_SCHEDULE')
   constructor(
     @InjectRepository(LiveRepository)
     private liveRepository: LiveRepository,
     private channelService: ChannelsService,
     private twitchService: TwitchService,
-    private vodService: VodsService
+    private vodService: VodsService,
+    private configService: ConfigService,
+    private schedulerRegistry: SchedulerRegistry
   ) { }
+  async onModuleInit() {
+    // Check if cron is set via env var - if not default to 5 minutes
+    if (!this.cronSchedule) {
+      this.logger.log('No user set cron schedule found, cron will run every 5 minutes');
+      this.cronSchedule = CronExpression.EVERY_5_MINUTES
+    }
 
-  // Check if channels are live (5 minutes)
-  @Cron(CronExpression.EVERY_5_MINUTES)
-  async handleCron() {
-    this.logger.verbose('Checking if channels are live');
-    await this.cronChannelLiveCheck();
+    // If user cron is valid via
+    if (this.cronSchedule in CronExpression) {
+      this.logger.log('Cron schedule found, cron will run every', this.cronSchedule);
+      this.cronSchedule = CronExpression[this.configService.get('LIVE_CRON_SCHEDULE')]
+    } else {
+      // Cron schedule is not valid
+      // Default to 5 minutes
+      this.logger.log('Invalid cron schedule, defaulting to 5 minutes');
+      this.cronSchedule = CronExpression.EVERY_5_MINUTES
+    }
+
+    // Create cron job
+    const checkLiveJob = new CronJob(this.cronSchedule, async () => {
+      this.logger.verbose('Checking if channels are live');
+      await this.cronChannelLiveCheck();
+    })
+
+    this.schedulerRegistry.addCronJob('liveCronCheck', checkLiveJob);
+    checkLiveJob.start();
   }
 
   async create(createLiveDto: CreateLiveDto, user: User) {
