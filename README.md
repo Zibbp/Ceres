@@ -106,11 +106,12 @@ Download a copy of the [`docker-compose.yml`](https://github.com/Zibbp/Ceres/raw
 
 ```
 # ENV
-DB_PASSWORD=CHANGEME    # openssl rand -hex 24
-JWT_SECRET=CHANGEME     # openssl rand -hex 24
-CLIENT_ID=CHANGEME      # Twitch Client ID
-CLIENT_SECRET=CHANGEME  # Twitch Client Secret
-API_URL=CHANGEME        # Http URL to Ceres API (this service) - example http://10.10.10.1:3950 or https://api.ceres.domain.com
+DB_PASSWORD=CHANGEME                  # openssl rand -hex 24
+JWT_SECRET=CHANGEME                   # openssl rand -hex 24
+CLIENT_ID=CHANGEME                    # Twitch Client ID
+CLIENT_SECRET=CHANGEME                # Twitch Client Secret
+API_URL=CHANGEME                      # Http URL to Ceres API (this service) - example http://10.10.10.1:3950 or https://api.ceres.domain.com
+LIVE_CRON_SCHEDULE=EVERY_5_MINUTES    # **Optional** Change the frequency of the live channel check (default 5 minutes). Visit https://github.com/Zibbp/Ceres/wiki/Changing-the-Live-Stream-check-cron-job for more information
 
 # Volumes
 /path/to/your/vods:/mnt/vods  # Change the path to where you vods are stored such as a network share (E.g. /mnt/nas/media/vods:/mnt/vods)
