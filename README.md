@@ -1,3 +1,9 @@
+# ⚠️ IMPORTANT
+
+Version 2 of Ceres, named "Ganymede" has been released. It is a complete re-write of the Ceres application in Golang with many improvements. Ceres will no longer be supported. Visit the [Ganymede repository](https://github.com/Zibbp/ganymede) for more information.
+
+---
+
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
